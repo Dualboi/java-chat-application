@@ -1,0 +1,116 @@
+package com.sonnybell.app;
+
+import java.io.*;
+import java.net.Socket;
+import java.util.Scanner;
+
+/**
+ * Client class to handle sending and receiving messages from the server.
+ * It connects to the server, sends messages, and listens for incoming messages.
+ */
+public class Client {
+    private static final int SERVER_PORT = 1234;
+    private Socket socket;
+    private BufferedReader reader;
+    private BufferedWriter writer;
+    private String username;
+
+    /**
+     * Constructor to initialize the client with a socket and username.
+     *
+     * @param socket   The socket connected to the server.
+     * @param username The username of the client.
+     */
+    public Client(Socket socket, String username) {
+        try {
+            this.socket = socket;
+            this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+            this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.username = username;
+
+            // Send username immediately
+            writer.write(username);
+            writer.newLine();
+            writer.flush();
+        } catch (IOException e) {
+            closeEverything();
+        }
+    }
+
+    /**
+     * Method to send messages to the server.
+     * It reads user input from the console and sends it to the server.
+     */
+    public void sendMessage() {
+        try (Scanner scanner = new Scanner(System.in)) {
+            while (socket.isConnected()) {
+                String messageToSend = scanner.nextLine();
+                writer.write(username + ": " + messageToSend);
+                writer.newLine();
+                writer.flush();
+            }
+        } catch (IOException e) {
+            closeEverything();
+        }
+    }
+
+    /**
+     * Method to listen for incoming messages from the server.
+     * It runs in a separate thread to continuously read messages.
+     */
+    public void listenForMessages() {
+        new Thread(() -> {
+            String msgFromServer;
+            try {
+                while ((msgFromServer = reader.readLine()) != null) {
+                    System.out.println(msgFromServer);
+                }
+            } catch (IOException e) {
+                closeEverything();
+            }
+        }).start();
+    }
+
+    /**
+     * Method to close all resources when done.
+     * It closes the socket, reader, and writer.
+     */
+    public void closeEverything() {
+        try {
+            if (reader != null) {
+                reader.close();
+            }
+
+            if (writer != null) {
+                writer.close();
+            }
+
+            if (socket != null) {
+                socket.close();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Main method to start the client.
+     * It connects to the server and starts listening for messages.
+     *
+     * @param args Command line arguments (not used).
+     */
+    public static void main(String[] args) {
+        try (Scanner scanner = new Scanner(System.in)) {
+            System.out.print("Enter your username: ");
+            String username = scanner.nextLine();
+
+            Socket socket = new Socket("localhost", SERVER_PORT);
+            Client client = new Client(socket, username);
+            client.listenForMessages();
+            client.sendMessage();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
