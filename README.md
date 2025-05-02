@@ -6,9 +6,9 @@ Running instructions
 Run in the root directory terminal mvn clean verify to build.
 Then still in the root directory run:
 
-Server
+*Server:*
 java -jar target/java_chat_app-1.0-SNAPSHOT.jar server
 
-Client
+*Client:*
 java -jar target/java_chat_app-1.0-SNAPSHOT.jar client
 
