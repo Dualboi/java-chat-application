@@ -10,6 +10,7 @@ import java.net.Socket;
  */
 public class Server {
     private static final int SERVER_PORT = 1234;
+    private static final int WEB_PORT = 8080;
     private ServerSocket serverSocket;
 
     /**
@@ -26,6 +27,9 @@ public class Server {
      * It runs in a loop to continuously accept new clients.
      */
     public void startServer() {
+        WebServer webServer = new WebServer(WEB_PORT);
+        webServer.run();
+
         try {
             while (!serverSocket.isClosed()) {
                 Socket socket = serverSocket.accept();
@@ -59,6 +63,7 @@ public class Server {
      * It creates a new ServerSocket and starts the server.
      *
      * @param args Command line arguments (not used).
+     * @throws IOException If an I/O error occurs when creating the server socket.
      */
     public static void main(String[] args) {
         try {

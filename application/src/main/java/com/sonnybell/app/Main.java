@@ -3,6 +3,8 @@ package com.sonnybell.app;
 /**
  * Main class to start the application.
  * It determines whether to run the server or client based on command line arguments.
+ * Usage: java -jar your-app.jar <server|client>
+ * @author Sonny Bell
  */
 public class Main {
     public static void main(String[] args) {
