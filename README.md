@@ -12,3 +12,5 @@ java -jar target/java_chat_app-1.0-SNAPSHOT.jar server
 *Client:*
 java -jar target/java_chat_app-1.0-SNAPSHOT.jar client
 
+To access the http server page:
+Enter http://localhost:8080/ into your web browser once the server is running.
