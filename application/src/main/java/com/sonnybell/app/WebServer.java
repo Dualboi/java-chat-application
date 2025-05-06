@@ -5,6 +5,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import com.sun.net.httpserver.HttpServer;
+import java.time.Instant;
 
 /**
  * WebServer class to start the HTTP server.
@@ -13,9 +14,11 @@ import com.sun.net.httpserver.HttpServer;
 @SuppressWarnings("restriction")
 public class WebServer implements Runnable {
     private int port;
+    private Instant startTime;
 
     WebServer(int port) {
         this.port = port;
+        this.startTime = Instant.now();
     }
 
     /**
@@ -36,7 +39,7 @@ public class WebServer implements Runnable {
             HttpServer server = HttpServer.create(new InetSocketAddress("localhost", port), 0);
 
             // Create a WebHandler to handle requests
-            WebHandler webHandler = new WebHandler();
+            WebHandler webHandler = new WebHandler(startTime);
 
             // Map all requests to the WebHandler
             server.createContext("/", webHandler);

@@ -5,8 +5,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import java.time.Duration;
+
 
 /**
  * WebHandler class that implements HttpHandler to handle HTTP requests.
@@ -14,6 +17,11 @@ import com.sun.net.httpserver.HttpHandler;
  */
 @SuppressWarnings("restriction")
 public class WebHandler implements HttpHandler {
+    private Instant serverStartTime;
+
+    public WebHandler(Instant serverStartTime) {
+        this.serverStartTime = serverStartTime;
+    }
 
     /**
      * Loads a file from the resources directory.
@@ -62,6 +70,17 @@ public class WebHandler implements HttpHandler {
             exchange.sendResponseHeaders(404, notFoundMessage.getBytes().length);
             out.write(notFoundMessage.getBytes());
         } else {
+            // Calculate server uptime
+            Duration uptime = Duration.between(serverStartTime, Instant.now());
+            long hours = uptime.toHours();
+            long minutes = uptime.toMinutes() % 60;
+            long seconds = uptime.getSeconds() % 60;
+
+            String uptimeMessage = String.format("Server uptime: %02d:%02d:%02d", hours, minutes, seconds);
+
+            // Inject uptime message into HTML content
+            fileContent = fileContent.replace("{{SERVER_UPTIME}}", uptimeMessage);
+
             // If file is found, return the content
             byte[] responseBytes = fileContent.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, responseBytes.length);
