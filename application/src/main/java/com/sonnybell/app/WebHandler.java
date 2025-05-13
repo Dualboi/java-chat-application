@@ -82,6 +82,10 @@ public class WebHandler implements HttpHandler {
             // Inject uptime message into HTML content
             fileContent = fileContent.replace("{{SERVER_UPTIME}}", uptimeMessage);
 
+            String totalClientsMs = String.format("Total clients connected: %d", ClientHandler.clientTotal);
+            // Inject total number of clients connected
+            fileContent = fileContent.replace("{{TOTAL_CLIENTS}}", totalClientsMs);
+
             // If file is found, return the content
             byte[] responseBytes = fileContent.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, responseBytes.length);
