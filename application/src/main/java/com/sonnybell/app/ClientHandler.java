@@ -43,14 +43,22 @@ public class ClientHandler implements Runnable {
     /**
      * Method to send messages to all connected clients.
      * It runs in a separate thread to continuously read messages.
+     * Contains an if statement to check if the message is "quit" to exit the loop.
+     * It also handles IOException when the client disconnects.
      */
     @Override
     public void run() {
         String message;
         try {
-            while (socket.isConnected() && (message = reader.readLine()) != null) {
-                broadcastMessage(message);
+        while (socket.isConnected() && (message = reader.readLine()) != null) {
+            if (message.equalsIgnoreCase("quit")) {
+                break; // Exit the loop
+            } else {
+                String fullMessage = message;
+                broadcastMessage(fullMessage);
             }
+        }
+
         } catch (IOException e) {
             // Client likely disconnected
         } finally {
@@ -83,7 +91,7 @@ public class ClientHandler implements Runnable {
      */
     public void removeClientHandler() {
         CLIENT.remove(this);
-        String message  = "SERVER: " + username + " has left the chat.";
+        String message = "SERVER: " + username + " has left the chat.";
         broadcastMessage(message);
         logMessage(message);
 
@@ -130,7 +138,7 @@ public class ClientHandler implements Runnable {
      */
     public void logMessage(String message) {
         // Get the path of the current working directory (your project folder)
-        String projectDir = System.getProperty("user.dir");  // This will give the path to your project folder
+        String projectDir = System.getProperty("user.dir"); // This will give the path to your project folder
         if (projectDir == null) {
             System.err.println("Could not resolve project directory.");
             return;
@@ -138,7 +146,8 @@ public class ClientHandler implements Runnable {
 
         // Replace %h with the project directory path
         String filePath = pattern.replace("%h", projectDir);
-        // System.out.println("Resolved log file path: " + filePath);  // Print the file path for debugging
+        // System.out.println("Resolved log file path: " + filePath); // Print the file
+        // path for debugging
 
         // Create a new File object with the resolved path
         File file = new File(filePath);

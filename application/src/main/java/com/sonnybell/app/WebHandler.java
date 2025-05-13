@@ -53,6 +53,7 @@ public class WebHandler implements HttpHandler {
     /**
      * Handles HTTP requests.
      * This method is called when a request is received.
+     * As well as adding a server uptime function to output the current amount of time the server is running
      *
      * @param exchange The HttpExchange object containing the request and response.
      * @throws IOException If an I/O error occurs.

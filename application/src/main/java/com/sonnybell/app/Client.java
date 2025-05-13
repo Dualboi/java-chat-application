@@ -40,11 +40,23 @@ public class Client {
     /**
      * Method to send messages to the server.
      * It reads user input from the console and sends it to the server.
+     * It also handles the "quit" command to exit the chat.
+     * The quit command is sent directly to the server without waiting for a new line.
+     * This allows the client to exit gracefully.
+     * the quit command works with the same logic in the ClientHandler class to act as handshake
+     * and close the connection.
      */
     public void sendMessage() {
         try (Scanner scanner = new Scanner(System.in)) {
             while (socket.isConnected()) {
                 String messageToSend = scanner.nextLine();
+
+                if (messageToSend.equalsIgnoreCase("quit")) {
+                writer.write("quit"); // send quit directly
+                writer.newLine();
+                writer.flush();
+                break; // exit the loop
+            }
                 writer.write(username + ": " + messageToSend);
                 writer.newLine();
                 writer.flush();
