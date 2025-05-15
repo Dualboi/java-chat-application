@@ -28,8 +28,6 @@ public class Client {
             this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.username = username;
 
-            // Send username immediately
-            writer.write(username);
             writer.newLine();
             writer.flush();
         } catch (IOException e) {
@@ -41,9 +39,11 @@ public class Client {
      * Method to send messages to the server.
      * It reads user input from the console and sends it to the server.
      * It also handles the "quit" command to exit the chat.
-     * The quit command is sent directly to the server without waiting for a new line.
+     * The quit command is sent directly to the server without waiting for a new
+     * line.
      * This allows the client to exit gracefully.
-     * the quit command works with the same logic in the ClientHandler class to act as handshake
+     * the quit command works with the same logic in the ClientHandler class to act
+     * as handshake
      * and close the connection.
      */
     public void sendMessage() {
@@ -51,12 +51,16 @@ public class Client {
             while (socket.isConnected()) {
                 String messageToSend = scanner.nextLine();
 
+                if (messageToSend.isEmpty()) {
+                    continue; // skip empty messages
+                }
+
                 if (messageToSend.equalsIgnoreCase("quit")) {
-                writer.write("quit"); // send quit directly
-                writer.newLine();
-                writer.flush();
-                break; // exit the loop
-            }
+                    writer.write("quit"); // send quit directly
+                    writer.newLine();
+                    writer.flush();
+                    break; // exit the loop
+                }
                 writer.write(username + ": " + messageToSend);
                 writer.newLine();
                 writer.flush();
@@ -114,10 +118,48 @@ public class Client {
      */
     public static void main(String[] args) {
         try (Scanner scanner = new Scanner(System.in)) {
+            Socket socket = new Socket("localhost", SERVER_PORT);
+            BufferedWriter tempWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+            BufferedReader tempReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            String serverResponse;
+            while (true) {
+                System.out.println("Enter server password:");
+                String clientInputPassword = scanner.nextLine();
+
+                // exit client if no password is entered
+                // this is to prevent the client from hanging if the server is not
+                if (clientInputPassword == null || clientInputPassword.trim().isEmpty()) {
+                    System.out.println("No password entered. Exiting.");
+                    socket.close();
+                    return;
+                }
+
+                // Send the password to the server
+                tempWriter.write(clientInputPassword);
+                tempWriter.newLine();
+                tempWriter.flush();
+
+                // Wait for server response
+                serverResponse = tempReader.readLine();
+
+                if ("OK".equals(serverResponse)) {
+                    break; // Password is correct, exit the loop
+                } else {
+                    System.out.println("Incorrect password. Please try again.");
+                }
+            }
+
+            // Password is valid, proceed to get username
             System.out.print("Enter your username: ");
             String username = scanner.nextLine();
+            System.out.println("Welcome to the chat application!");
 
-            Socket socket = new Socket("localhost", SERVER_PORT);
+            // Send username to the server
+            tempWriter.write(username);
+            tempWriter.newLine();
+            tempWriter.flush();
+
             Client client = new Client(socket, username);
             client.listenForMessages();
             client.sendMessage();

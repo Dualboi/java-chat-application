@@ -43,18 +43,31 @@ public class ClientHandler implements Runnable {
         try {
             this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.username = reader.readLine(); // First message is username
+
+            // Only read username AFTER password is validated
+            this.username = reader.readLine();
+            if (username == null) {
+                socket.close();
+                return;
+            }
+
+            System.out.println("A new user has connected!");
+
             // Adds the client to the total count of clients
             clientTotal++;
+
             // Adds the client to the list of usernames
             clientNamesList.add(username);
+
+            // Add this client to the list of connected clients
+            CLIENT.add(this);
+
             String message = "SERVER: " + username + " has joined the chat!";
             broadcastMessage(message);
             logMessage(message);
         } catch (IOException e) {
             closeEverything();
         }
-        CLIENT.add(this); // Add this client to the list of connected clients
     }
 
     /**
@@ -67,14 +80,14 @@ public class ClientHandler implements Runnable {
     public void run() {
         String message;
         try {
-        while (socket.isConnected() && (message = reader.readLine()) != null) {
-            if (message.equalsIgnoreCase("quit")) {
-                break; // Exit the loop
-            } else {
-                String fullMessage = message;
-                broadcastMessage(fullMessage);
+            while (socket.isConnected() && (message = reader.readLine()) != null) {
+                if (message.equalsIgnoreCase("quit")) {
+                    break; // Exit the loop
+                } else {
+                    String fullMessage = message;
+                    broadcastMessage(fullMessage);
+                }
             }
-        }
 
         } catch (IOException e) {
             // Client likely disconnected
@@ -109,7 +122,7 @@ public class ClientHandler implements Runnable {
     public void removeClientHandler() {
         // Removes the client from the server
         CLIENT.remove(this);
-        // Removes the client from the total count of clients 
+        // Removes the client from the total count of clients
         clientTotal--;
         // Removes the client from the list of usernames
         clientNamesList.remove(username);
