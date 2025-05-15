@@ -2,7 +2,8 @@ package com.sonnybell.app;
 
 /**
  * Main class to start the application.
- * It determines whether to run the server or client based on command line arguments.
+ * It serves as the entry point for the application.
+ * It initializes the server or client based on the command line argument.
  * Usage: java -jar your-app.jar <server|client>
  * @author Sonny Bell
  */

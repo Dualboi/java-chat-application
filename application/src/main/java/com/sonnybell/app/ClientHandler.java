@@ -2,6 +2,8 @@ package com.sonnybell.app;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -10,14 +12,24 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * It handles sending and receiving messages for each connected client.
  */
 public class ClientHandler implements Runnable {
+    // List to keep track of all connected clients
     private static final List<ClientHandler> CLIENT = new CopyOnWriteArrayList<>();
+    // Socket connected to the client
     private Socket socket;
+    // BufferedReader to read messages from the client
     private BufferedReader reader;
+    // BufferedWriter to send messages to the client
     private BufferedWriter writer;
+    // Username of the client
     private String username;
+    // Append mode for the log file
     private boolean append;
+    // Pattern for the log file path
     private String pattern;
+    // Static variable to keep track of the total number of clients
     public static int clientTotal = 0;
+    // List to keep track of client usernames
+    public static List<String> clientNamesList = Collections.synchronizedList(new ArrayList<>());
 
     /**
      * Constructor to initialize the client handler with a socket.
@@ -32,7 +44,10 @@ public class ClientHandler implements Runnable {
             this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.username = reader.readLine(); // First message is username
+            // Adds the client to the total count of clients
             clientTotal++;
+            // Adds the client to the list of usernames
+            clientNamesList.add(username);
             String message = "SERVER: " + username + " has joined the chat!";
             broadcastMessage(message);
             logMessage(message);
@@ -92,8 +107,12 @@ public class ClientHandler implements Runnable {
      * and broadcast a message indicating the client has left.
      */
     public void removeClientHandler() {
+        // Removes the client from the server
         CLIENT.remove(this);
+        // Removes the client from the total count of clients 
         clientTotal--;
+        // Removes the client from the list of usernames
+        clientNamesList.remove(username);
         String message = "SERVER: " + username + " has left the chat.";
         broadcastMessage(message);
         logMessage(message);
