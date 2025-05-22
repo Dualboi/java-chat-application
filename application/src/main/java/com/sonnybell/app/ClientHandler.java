@@ -51,6 +51,15 @@ public class ClientHandler implements Runnable {
                 return;
             }
 
+            // Getting chat history from the ChatHistory class
+            for (String msg : ChatHistory.getMessageHistory()) {
+                writer.write(msg);
+                writer.newLine();
+            }
+            writer.write("---END_HISTORY---");
+            writer.newLine();
+            writer.flush();
+
             System.out.println("A new user has connected!");
 
             // Adds the client to the total count of clients
@@ -106,6 +115,9 @@ public class ClientHandler implements Runnable {
             try {
                 if (!client.username.equals(this.username)) {
                     client.writer.write(message);
+
+                    // Append the message to chat history
+                    ChatHistory.addMessageToHistory(message);
                     client.writer.newLine();
                     client.writer.flush();
                 }

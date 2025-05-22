@@ -60,7 +60,7 @@ public class Client {
             if (messageToSend.equalsIgnoreCase("quit")) {
                 writer.write("quit");
             } else {
-                writer.write(username + ": " + messageToSend);
+                writer.write(username + ": " + messageToSend);;
             }
             writer.newLine();
             writer.flush();
@@ -115,6 +115,23 @@ public class Client {
         });
         listenerThread.setDaemon(true);
         listenerThread.start();
+    }
+
+    /**
+     * Add a method to read initial history.
+     * It reads the history sent by the server until a special line "---END_HISTORY---".
+     */
+    public void readInitialHistory() throws IOException {
+        // Assume the server sends a special line "---END_HISTORY---" after the history
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (line.equals("---END_HISTORY---")) break;
+            if (messageListener != null) {
+                messageListener.onMessageReceived(line);
+            } else {
+                System.out.println(line);
+            }
+        }
     }
 
     /**
@@ -203,6 +220,7 @@ public class Client {
 
             // Close the temporary writer and reader
             Client client = new Client(socket, username);
+            client.readInitialHistory();
             client.listenForMessages();
             client.sendMessageFromConsole(); // CLI uses this
 
