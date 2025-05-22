@@ -88,9 +88,9 @@ public class WebHandler implements HttpHandler {
                 // Inject uptime message into HTML content
                 responseContent = responseContent.replace("{{SERVER_UPTIME}}", uptimeMessage);
 
-                // Accessing the total number of clients connected
+                // Accessing the total number of clients connected 
                 String totalClientsMs = String.format("Total clients connected: %d", ClientHandler.clientTotal);
-                // Inject total number of clients connected
+                // Inject total number of clients connected variable into the CurrentClients page
                 responseContent = responseContent.replace("{{TOTAL_CLIENTS}}", totalClientsMs);
 
                 // Accessing the list of client names and adding line breaks

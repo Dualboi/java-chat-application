@@ -7,11 +7,16 @@ Running instructions
     Run in the root directory terminal "mvn clean verify" to build.
     Then still in the root directory run:
 
+Terminal instructions
+
 *Server:*
-    "java -jar target/java_chat_app-1.0-SNAPSHOT.jar server"
+    java -jar target/java_chat_app-1.0-SNAPSHOT.jar server
 
 *Client:*
-    "java -jar target/java_chat_app-1.0-SNAPSHOT.jar client"
+    java -jar target/java_chat_app-1.0-SNAPSHOT.jar client
+
+To run the client in javafx
+    mvn javafx:run "-Djavafx.run.args=client"
 
 To access the http server page:
 Enter http://localhost:8080/ into your web browser once the server is running.

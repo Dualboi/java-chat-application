@@ -14,6 +14,7 @@ public class Client {
     private BufferedReader reader;
     private BufferedWriter writer;
     private String username;
+    private MessageListener messageListener;
 
     /**
      * Constructor to initialize the client with a socket and username.
@@ -36,7 +37,15 @@ public class Client {
     }
 
     /**
-     * Method to send messages to the server.
+     * Interface to listen for incoming messages.
+     * It can be implemented by other classes to handle messages.
+     */
+    public void setMessageListener(MessageListener messageListener) {
+        this.messageListener = messageListener;
+    }
+
+    /**
+     * Client GUI method to send messages to the server.
      * It reads user input from the console and sends it to the server.
      * It also handles the "quit" command to exit the chat.
      * The quit command is sent directly to the server without waiting for a new
@@ -46,27 +55,37 @@ public class Client {
      * as handshake
      * and close the connection.
      */
-    public void sendMessage() {
+    public void sendMessage(String messageToSend) {
+        try {
+            if (messageToSend.equalsIgnoreCase("quit")) {
+                writer.write("quit");
+            } else {
+                writer.write(username + ": " + messageToSend);
+            }
+            writer.newLine();
+            writer.flush();
+        } catch (IOException e) {
+            System.out.println("[ERROR] Failed to send message: " + e.getMessage());
+            e.printStackTrace();
+            closeEverything();
+        }
+    }
+
+    /**
+     * Method to send messages from the console.
+     * It reads user input from the console and sends it to the server.
+     * It also handles the "quit" command to exit the chat.
+     */
+    public void sendMessageFromConsole() {
         try (Scanner scanner = new Scanner(System.in)) {
             while (socket.isConnected()) {
                 String messageToSend = scanner.nextLine();
-
-                if (messageToSend.isEmpty()) {
-                    continue; // skip empty messages
-                }
-
-                if (messageToSend.equalsIgnoreCase("quit")) {
-                    writer.write("quit"); // send quit directly
-                    writer.newLine();
-                    writer.flush();
-                    break; // exit the loop
-                }
-                writer.write(username + ": " + messageToSend);
-                writer.newLine();
-                writer.flush();
+                if (messageToSend.isEmpty())
+                    continue;
+                sendMessage(messageToSend);
+                if (messageToSend.equalsIgnoreCase("quit"))
+                    break;
             }
-        } catch (IOException e) {
-            closeEverything();
         }
     }
 
@@ -75,16 +94,27 @@ public class Client {
      * It runs in a separate thread to continuously read messages.
      */
     public void listenForMessages() {
-        new Thread(() -> {
+        Thread listenerThread = new Thread(() -> {
             String msgFromServer;
             try {
                 while ((msgFromServer = reader.readLine()) != null) {
-                    System.out.println(msgFromServer);
+                    if (messageListener != null) {
+                        messageListener.onMessageReceived(msgFromServer);
+                    } else {
+                        System.out.println(msgFromServer);
+                    }
                 }
+                System.out.println("[DEBUG] Server closed the connection (readLine returned null)");
             } catch (IOException e) {
+                System.out.println("[ERROR] Error reading from server: " + e.getMessage());
+                e.printStackTrace();
+            } finally {
+                System.out.println("[DEBUG] Listener thread finally block");
                 closeEverything();
             }
-        }).start();
+        });
+        listenerThread.setDaemon(true);
+        listenerThread.start();
     }
 
     /**
@@ -113,8 +143,14 @@ public class Client {
     /**
      * Main method to start the client.
      * It connects to the server and starts listening for messages.
+     * It also handles user input for the password and username.
+     * The password is sent to the server for validation.
+     * If the password is correct, the client proceeds to get the username.
+     * The client will keep prompting for the password until a valid one is entered.
+     * If no password is entered, the client exits.
+     * The client will also exit if the server is not reachable.
+     * The client will print an error message if the server is not reachable.
      *
-     * @param args Command line arguments (not used).
      */
     public static void main(String[] args) {
         try (Scanner scanner = new Scanner(System.in)) {
@@ -122,6 +158,7 @@ public class Client {
             BufferedWriter tempWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             BufferedReader tempReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
+            // Prompt for password
             String serverResponse;
             while (true) {
                 System.out.println("Enter server password:");
@@ -143,6 +180,10 @@ public class Client {
                 // Wait for server response
                 serverResponse = tempReader.readLine();
 
+                // Check if the server response is "OK"
+                // The "OK" response acts as a simple handshake protocol
+                // to verify that the password is correct.
+                // If the password is correct, the server will respond with "OK"
                 if ("OK".equals(serverResponse)) {
                     break; // Password is correct, exit the loop
                 } else {
@@ -160,9 +201,11 @@ public class Client {
             tempWriter.newLine();
             tempWriter.flush();
 
+            // Close the temporary writer and reader
             Client client = new Client(socket, username);
             client.listenForMessages();
-            client.sendMessage();
+            client.sendMessageFromConsole(); // CLI uses this
+
         } catch (IOException e) {
             e.printStackTrace();
         }
