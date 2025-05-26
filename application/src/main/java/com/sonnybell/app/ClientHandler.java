@@ -73,7 +73,6 @@ public class ClientHandler implements Runnable {
 
             String message = "SERVER: " + username + " has joined the chat!";
             broadcastMessage(message);
-            logMessage(message);
         } catch (IOException e) {
             closeEverything();
         }
@@ -91,15 +90,14 @@ public class ClientHandler implements Runnable {
         try {
             while (socket.isConnected() && (message = reader.readLine()) != null) {
                 if (message.equalsIgnoreCase("quit")) {
-                    break; // Exit the loop
+                    break;
+                } else if (message.trim().isEmpty()) {
+                    continue;
                 } else {
-                    String fullMessage = message;
-                    broadcastMessage(fullMessage);
+                    broadcastMessage(message);
                 }
             }
-
         } catch (IOException e) {
-            // Client likely disconnected
         } finally {
             closeEverything();
         }
@@ -111,13 +109,16 @@ public class ClientHandler implements Runnable {
      * @param message The message to be sent.
      */
     public void broadcastMessage(String message) {
+        // Append the message to chat history only once
+        ChatHistory.addMessageToHistory(message);
+
+        // Log the message to the log file
+        logMessage(message);
+
         for (ClientHandler client : CLIENT) {
             try {
                 if (!client.username.equals(this.username)) {
                     client.writer.write(message);
-
-                    // Append the message to chat history
-                    ChatHistory.addMessageToHistory(message);
                     client.writer.newLine();
                     client.writer.flush();
                 }
@@ -140,7 +141,6 @@ public class ClientHandler implements Runnable {
         clientNamesList.remove(username);
         String message = "SERVER: " + username + " has left the chat.";
         broadcastMessage(message);
-        logMessage(message);
 
     }
 
@@ -220,7 +220,6 @@ public class ClientHandler implements Runnable {
         try (FileWriter writer = new FileWriter(filePath, append)) {
             String timestamped = "[" + new java.util.Date() + "] " + message;
             writer.write(timestamped + System.lineSeparator());
-            // System.out.println("Successfully wrote to log.");
         } catch (IOException e) {
             System.err.println("Failed to write to log file.");
             e.printStackTrace();

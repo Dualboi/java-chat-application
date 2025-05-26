@@ -89,11 +89,15 @@ public class ClientSideGUI extends Application {
             String serverResponse;
             while (true) {
                 String password = promptDialog("Enter server password:");
-                if (password == null || password.trim().isEmpty()) {
+                if (password == null) {
+                    // User cancelled the dialog, exit the app
                     Platform.exit();
                     return;
                 }
-
+                if (password.trim().isEmpty()) {
+                    showAlert("Password cannot be blank. Please try again.");
+                    continue;
+                }
                 tempWriter.write(password);
                 tempWriter.newLine();
                 tempWriter.flush();
@@ -109,7 +113,16 @@ public class ClientSideGUI extends Application {
             // Prompt for username
             String username = promptDialog("Enter your username:");
             if (username == null || username.trim().isEmpty()) {
-                Platform.exit();
+                Platform.runLater(() -> {
+                    Platform.exit();
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(200);
+                        } catch (InterruptedException ignored) {
+                        }
+                        System.exit(0);
+                    }).start();
+                });
                 return;
             }
 
@@ -121,12 +134,16 @@ public class ClientSideGUI extends Application {
             client.setMessageListener(msg -> {
                 Platform.runLater(() -> messageArea.appendText(msg + "\n"));
             });
+            // Read initial history before listening for new messages
+            client.readInitialHistory();
             client.listenForMessages();
 
             // Enable the send button after successful authentication
             Platform.runLater(() -> sendButton.setDisable(false));
 
-        } catch (IOException e) {
+        } catch (
+
+        IOException e) {
             showAlert("Error connecting to server: " + e.getMessage());
             Platform.exit();
         }
