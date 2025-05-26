@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.geometry.Insets;
 
 import java.io.*;
 import java.net.Socket;
@@ -43,22 +44,31 @@ public class ClientSideGUI extends Application {
 
         // Set the text area to be non-resizable
         messageArea.setWrapText(true);
+        messageArea.setPrefHeight(500);
+        messageArea.setPrefWidth(600);
+
+        // Add left padding to the message area
+        root.setPadding(new Insets(10, 10, 10, 30));
 
         // Create a scroll pane for the message area
         inputField = new TextField();
+        inputField.setPrefWidth(600);
+        inputField.setPrefHeight(50);
 
         // Set the prompt text for the input field
         inputField.setPromptText("Type a message...");
 
         // Create a button to send messages
         sendButton = new Button("Send");
+        sendButton.setPrefWidth(100);
+        sendButton.setPrefHeight(50);
 
         // Set the button to be disabled initially
         sendButton.setDisable(true);
 
         HBox inputBox = new HBox(10, inputField, sendButton);
         root.getChildren().addAll(new ScrollPane(messageArea), inputBox);
-        Scene scene = new Scene(root, 400, 300);
+        Scene scene = new Scene(root, 800, 600);
 
         // Set the scene to the primary stage
         primaryStage.setTitle("Client Chat");
