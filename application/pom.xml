@@ -14,7 +14,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <junit.version>5.6.0</junit.version>
     <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
-    <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
+    <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <checkstyle.version>8.45.1</checkstyle.version>
     <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
     <jacoco-maven-plugin.version>0.8.4</jacoco-maven-plugin.version>
@@ -83,6 +83,24 @@
     <version>0.0.8</version>
     <configuration>
         <mainClass>com.sonnybell.app.ClientSideGUI</mainClass> <!-- or your main class -->
+    </configuration>
+</plugin>
+      <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-checkstyle-plugin</artifactId>
+    <version>${maven-checkstyle-plugin.version}</version>
+    <executions>
+        <execution>
+          <?m2e ignore?>
+      <phase>validate</phase>
+      <goals>
+        <goal>check</goal>
+      </goals>
+    </execution>
+    </executions>
+    <configuration>
+      <!-- Provide the correct path to your checkstyle.xml file -->
+      <configLocation>${project.basedir}/checkstyle.xml</configLocation>
     </configuration>
 </plugin>
 
