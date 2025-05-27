@@ -61,8 +61,19 @@ public class WebHandler implements HttpHandler {
      */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        OutputStream out = exchange.getResponseBody();
         String requestPath = exchange.getRequestURI().getPath();
+
+        // JSON endpoint
+        if ("/api/status".equals(requestPath)) {
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            String jsonResponse = buildStatusJson();
+            byte[] responseBytes = jsonResponse.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, responseBytes.length);
+            try (OutputStream out = exchange.getResponseBody()) {
+                out.write(responseBytes);
+            }
+            return;
+        }
 
         // Treat "/" as "/index.html"
         if (requestPath.equals("/")) {
@@ -103,8 +114,26 @@ public class WebHandler implements HttpHandler {
         // If the file is not found, return a 404 error
         byte[] responseBytes = responseContent.getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(200, responseBytes.length);
+        OutputStream out = exchange.getResponseBody();
         out.write(responseBytes);
         out.flush();
         out.close();
+    }
+
+    // Helper method to create JSON
+    private String buildStatusJson() {
+        Duration uptime = Duration.between(serverStartTime, Instant.now());
+        long hours = uptime.toHours();
+        long minutes = uptime.toMinutes() % 60;
+        long seconds = uptime.getSeconds() % 60;
+
+        String uptimeMessage = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+        int totalClients = ClientHandler.clientTotal;
+        String clientNames = String.join(",", ClientHandler.clientNamesList);
+
+        return String.format(
+            "{\"uptime\":\"%s\",\"totalClients\":%d,\"clientNames\":\"%s\"}",
+            uptimeMessage, totalClients, clientNames
+        );
     }
 }
