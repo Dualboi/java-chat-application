@@ -109,11 +109,18 @@ public class ClientHandler implements Runnable {
      * @param message The message to be sent.
      */
     public void broadcastMessage(String message) {
-        // Append the message to chat history only once
-        ChatHistory.addMessageToHistory(message);
+        // Decide on a tag to label this message
+        String tag;
+        if (message.contains("has joined the chat!")) {
+            tag = "HelloUser";
+        } else if (message.contains("has left the chat.")) {
+            tag = "GoodbyeUser";
+        } else {
+            tag = "UserChats";
+        }
 
-        // Log the message to the log file
-        logMessage(message);
+        ChatHistory.addMessageToHistory(message);
+        logMessage(message, tag);
 
         for (ClientHandler client : CLIENT) {
             try {
@@ -182,43 +189,31 @@ public class ClientHandler implements Runnable {
      *
      * @param message The message to be logged.
      */
-    public void logMessage(String message) {
-        // Get the path of the current working directory (your project folder)
-        String projectDir = System.getProperty("user.dir"); // This will give the path to your project folder
+    public void logMessage(String message, String tag) {
+        String projectDir = System.getProperty("user.dir");
         if (projectDir == null) {
             System.err.println("Could not resolve project directory.");
             return;
         }
-
-        // Replace %h with the project directory path
         String filePath = pattern.replace("%h", projectDir);
-        // System.out.println("Resolved log file path: " + filePath); // Print the file
-        // path for debugging
-
-        // Create a new File object with the resolved path
         File file = new File(filePath);
 
-        // Check if the file exists, if not create it
         if (!file.exists()) {
             try {
-                boolean created = file.createNewFile(); // Create the file if it doesn't exist
+                boolean created = file.createNewFile();
                 if (created) {
-                    System.out.println("Log file did not exist, created a new one.");
-                } else {
-                    System.err.println("Failed to create the log file.");
-                    return;
+                    System.out.println("Log file created.");
                 }
             } catch (IOException e) {
-                System.err.println("Failed to create the log file.");
+                System.err.println("Failed to create log file.");
                 e.printStackTrace();
                 return;
             }
         }
 
-        // Write to the log file
-        try (FileWriter writer = new FileWriter(filePath, append)) {
-            String timestamped = "[" + new java.util.Date() + "] " + message;
-            writer.write(timestamped + System.lineSeparator());
+        try (FileWriter fw = new FileWriter(filePath, append)) {
+            String timestamped = "[" + new java.util.Date() + "] [" + tag + "] " + message;
+            fw.write(timestamped + System.lineSeparator());
         } catch (IOException e) {
             System.err.println("Failed to write to log file.");
             e.printStackTrace();
