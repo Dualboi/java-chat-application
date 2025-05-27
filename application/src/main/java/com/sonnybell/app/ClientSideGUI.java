@@ -25,6 +25,7 @@ public class ClientSideGUI extends Application {
     private TextField inputField;
     private Button sendButton;
     private Client client;
+    private int SERVER_PORT = 0;
 
     /**
      * Constructor to initialize the client-side GUI.
@@ -90,8 +91,23 @@ public class ClientSideGUI extends Application {
      * It handles user authentication and message listening.
      */
     private void setupClient() {
+        Socket socket = null;
         try {
-            Socket socket = new Socket("localhost", 1234);
+            // prompt user for port number
+            if (SERVER_PORT == 0) {
+                String portInput = promptDialog("Enter server port (default is 6666):");
+                if (portInput != null && !portInput.trim().isEmpty()) {
+                    try {
+                        SERVER_PORT = Integer.parseInt(portInput);
+                    } catch (NumberFormatException e) {
+                        showAlert("Invalid port number. Using default port 6666.");
+                        SERVER_PORT = 6666;
+                    }
+                } else {
+                    SERVER_PORT = 6666;
+                }
+            }
+            socket = new Socket("localhost", SERVER_PORT);
             BufferedWriter tempWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             BufferedReader tempReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
@@ -101,6 +117,9 @@ public class ClientSideGUI extends Application {
                 String password = promptDialog("Enter server password:");
                 if (password == null) {
                     // User cancelled the dialog, exit the app
+                    if (socket != null && !socket.isClosed()) {
+                        try { socket.close(); } catch (IOException ignored) {}
+                    }
                     Platform.exit();
                     return;
                 }
@@ -123,6 +142,9 @@ public class ClientSideGUI extends Application {
             // Prompt for username
             String username = promptDialog("Enter your username:");
             if (username == null || username.trim().isEmpty()) {
+                if (socket != null && !socket.isClosed()) {
+                    try { socket.close(); } catch (IOException ignored) {}
+                }
                 Platform.runLater(() -> {
                     Platform.exit();
                     new Thread(() -> {
@@ -151,9 +173,10 @@ public class ClientSideGUI extends Application {
             // Enable the send button after successful authentication
             Platform.runLater(() -> sendButton.setDisable(false));
 
-        } catch (
-
-        IOException e) {
+        } catch (IOException e) {
+            if (socket != null && !socket.isClosed()) {
+                try { socket.close(); } catch (IOException ignored) {}
+            }
             showAlert("Error connecting to server: " + e.getMessage());
             Platform.exit();
         }
@@ -175,11 +198,14 @@ public class ClientSideGUI extends Application {
     private void sendMessage() {
         String msg = inputField.getText().trim();
         if (!msg.isEmpty()) {
-
-            // Append your message locally like CLI does
             messageArea.appendText(msg + "\n");
+            client.sendMessage(msg);
 
-            client.sendMessage(msg); // GUI uses this
+            // Close the GUI if user typed "quit"
+            if ("quit".equalsIgnoreCase(msg)) {
+                Platform.exit();
+            }
+
             inputField.clear();
         }
     }

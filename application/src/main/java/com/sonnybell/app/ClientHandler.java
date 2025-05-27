@@ -141,7 +141,6 @@ public class ClientHandler implements Runnable {
         clientNamesList.remove(username);
         String message = "SERVER: " + username + " has left the chat.";
         broadcastMessage(message);
-
     }
 
     /**

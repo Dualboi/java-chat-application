@@ -49,7 +49,8 @@ public class WebServer implements Runnable {
 
             // Start the server
             server.start();
-            System.out.println("Server started on port " + port);
+            System.out.println("HTTP web server started on port " + port);
+            System.out.println("Visit http://localhost:" + port + " to access the server.");
         } catch (IOException e) {
             e.printStackTrace();
         }

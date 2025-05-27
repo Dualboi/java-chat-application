@@ -9,7 +9,7 @@ import java.util.Scanner;
  * It connects to the server, sends messages, and listens for incoming messages.
  */
 public class Client {
-    private static final int SERVER_PORT = 1234;
+    private static int SERVER_PORT = 6666;
     private Socket socket;
     private BufferedReader reader;
     private BufferedWriter writer;
@@ -171,12 +171,26 @@ public class Client {
      */
     public static void main(String[] args) {
         try (Scanner scanner = new Scanner(System.in)) {
+            // prompt user for port number
+            System.out.println("Enter server port (default is 6666):");
+            String portInput = scanner.nextLine();
+            if (portInput != null && !portInput.trim().isEmpty()) {
+                try {
+                    SERVER_PORT = Integer.parseInt(portInput);
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid port number. Using default port 6666.");
+                    SERVER_PORT = 6666;
+                }
+            } else {
+                SERVER_PORT = 6666;
+            }
+
             Socket socket = new Socket("localhost", SERVER_PORT);
             BufferedWriter tempWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             BufferedReader tempReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            // Prompt for password
             String serverResponse;
+
             while (true) {
                 System.out.println("Enter server password:");
                 String clientInputPassword = scanner.nextLine();
