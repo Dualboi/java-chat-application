@@ -14,6 +14,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ClientHandler implements Runnable {
     // List to keep track of all connected clients
     private static final List<ClientHandler> CLIENT = new CopyOnWriteArrayList<>();
+
+    private static int clientTotal;
+
+    /**
+     * List to keep track of client usernames.
+     * This is a synchronized list to ensure thread safety when multiple clients
+     * are connected.
+     */
+    private static List<String> clientNamesList = Collections.synchronizedList(new ArrayList<>());
     // Socket connected to the client
     private Socket socket;
     // BufferedReader to read messages from the client
@@ -26,10 +35,6 @@ public class ClientHandler implements Runnable {
     private boolean append;
     // Pattern for the log file path
     private String pattern;
-    // Static variable to keep track of the total number of clients
-    public static int clientTotal = 0;
-    // List to keep track of client usernames
-    public static List<String> clientNamesList = Collections.synchronizedList(new ArrayList<>());
 
     /**
      * Constructor to initialize the client handler with a socket.
@@ -79,6 +84,19 @@ public class ClientHandler implements Runnable {
     }
 
     /**
+     * Method to get the total number of connected clients.
+     *
+     * @return The total number of connected clients.
+     */
+    public static int getClientTotal() {
+        return clientTotal;
+    }
+
+    public static List<String> getClientNamesList() {
+        return clientNamesList;
+    }
+
+    /**
      * Method to send messages to all connected clients.
      * It runs in a separate thread to continuously read messages.
      * Contains an if statement to check if the message is "quit" to exit the loop.
@@ -89,7 +107,7 @@ public class ClientHandler implements Runnable {
         String message;
         try {
             while (socket.isConnected() && (message = reader.readLine()) != null) {
-                if (message.equalsIgnoreCase("quit")) {
+                if ("quit".equalsIgnoreCase(message)) {
                     break;
                 } else if (message.trim().isEmpty()) {
                     continue;

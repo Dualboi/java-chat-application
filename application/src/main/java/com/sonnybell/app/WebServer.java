@@ -1,11 +1,11 @@
 package com.sonnybell.app;
 
+import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import com.sun.net.httpserver.HttpServer;
-import java.time.Instant;
 
 /**
  * WebServer class to start the HTTP server.
@@ -25,7 +25,6 @@ public class WebServer implements Runnable {
      * Main method to start the web server.
      * It creates a new WebServer instance and starts it.
      *
-     * @param args Command line arguments (not used).
      */
     @Override
     public void run() {

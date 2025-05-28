@@ -9,7 +9,7 @@ import java.util.Scanner;
  * It connects to the server, sends messages, and listens for incoming messages.
  */
 public class Client {
-    private static int SERVER_PORT = 6666;
+    private static int serverPort = 6666;
     private Socket socket;
     private BufferedReader reader;
     private BufferedWriter writer;
@@ -37,6 +37,15 @@ public class Client {
     }
 
     /**
+     * Method to set the server port.
+     * This allows the client to connect to a different port if needed.
+     *
+     */
+    public int getServerPort() {
+        return serverPort;
+    }
+
+    /**
      * Interface to listen for incoming messages.
      * It can be implemented by other classes to handle messages.
      */
@@ -57,10 +66,10 @@ public class Client {
      */
     public void sendMessage(String messageToSend) {
         try {
-            if (messageToSend.equalsIgnoreCase("quit")) {
+            if ("quit".equalsIgnoreCase(messageToSend)) {
                 writer.write("quit");
             } else {
-                writer.write(username + ": " + messageToSend);;
+                writer.write(username + ": " + messageToSend);
             }
             writer.newLine();
             writer.flush();
@@ -80,11 +89,13 @@ public class Client {
         try (Scanner scanner = new Scanner(System.in)) {
             while (socket.isConnected()) {
                 String messageToSend = scanner.nextLine();
-                if (messageToSend.isEmpty())
+                if (messageToSend.isEmpty()) {
                     continue;
+                }
                 sendMessage(messageToSend);
-                if (messageToSend.equalsIgnoreCase("quit"))
+                if ("quit".equalsIgnoreCase(messageToSend)) {
                     break;
+                }
             }
         }
     }
@@ -119,13 +130,16 @@ public class Client {
 
     /**
      * Add a method to read initial history.
-     * It reads the history sent by the server until a special line "---END_HISTORY---".
+     * It reads the history sent by the server until a special line
+     * "---END_HISTORY---".
      */
     public void readInitialHistory() throws IOException {
         // Assume the server sends a special line "---END_HISTORY---" after the history
         String line;
         while ((line = reader.readLine()) != null) {
-            if (line.equals("---END_HISTORY---")) break;
+            if ("---END_HISTORY---".equals(line)) {
+                break;
+            }
             if (messageListener != null) {
                 messageListener.onMessageReceived(line);
             } else {
@@ -170,22 +184,23 @@ public class Client {
      *
      */
     public static void main(String[] args) {
+        final int defaultPort = 6666;
         try (Scanner scanner = new Scanner(System.in)) {
             // prompt user for port number
-            System.out.println("Enter server port (default is 6666):");
+            System.out.println("Enter server port (default is " + defaultPort + "):");
             String portInput = scanner.nextLine();
             if (portInput != null && !portInput.trim().isEmpty()) {
                 try {
-                    SERVER_PORT = Integer.parseInt(portInput);
+                    serverPort = Integer.parseInt(portInput);
                 } catch (NumberFormatException e) {
-                    System.out.println("Invalid port number. Using default port 6666.");
-                    SERVER_PORT = 6666;
+                    System.out.println("Invalid port number. Using default port " + defaultPort + ".");
+                    serverPort = defaultPort;
                 }
             } else {
-                SERVER_PORT = 6666;
+                serverPort = defaultPort;
             }
 
-            Socket socket = new Socket("localhost", SERVER_PORT);
+            Socket socket = new Socket("localhost", serverPort);
             BufferedWriter tempWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             BufferedReader tempReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 

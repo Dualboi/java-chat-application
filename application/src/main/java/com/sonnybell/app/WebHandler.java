@@ -1,14 +1,14 @@
 package com.sonnybell.app;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import java.time.Duration;
+import java.time.Instant;
 
 /**
  * WebHandler class that implements HttpHandler to handle HTTP requests.
@@ -18,9 +18,24 @@ import java.time.Duration;
 @SuppressWarnings("restriction")
 public class WebHandler implements HttpHandler {
     private Instant serverStartTime;
+    private final int minute = 60;
 
+    /**
+     * Constructor to initialize the WebHandler with the server start time.
+     *
+     * @param serverStartTime The Instant representing the server start time.
+     */
     public WebHandler(Instant serverStartTime) {
         this.serverStartTime = serverStartTime;
+    }
+
+    /**
+     * Gets the server start time.
+     *
+     * @return The Instant representing the server start time.
+     */
+    public int getMinute() {
+        return minute;
     }
 
     /**
@@ -32,11 +47,12 @@ public class WebHandler implements HttpHandler {
      */
     private String loadFile(String fileName) {
         String fileContent = null;
+        final int byteSize = 1024;
         try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(fileName)) {
             if (inputStream != null) {
                 // Use a ByteArrayOutputStream to read the InputStream into a byte array
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
+                byte[] buffer = new byte[byteSize];
                 int length;
                 while ((length = inputStream.read(buffer)) != -1) {
                     byteArrayOutputStream.write(buffer, 0, length);
@@ -62,13 +78,14 @@ public class WebHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String requestPath = exchange.getRequestURI().getPath();
+        final int getOk = 200;
 
-        // JSON endpoint
+        // If this is the JSON endpoint
         if ("/api/status".equals(requestPath)) {
             exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
             String jsonResponse = buildStatusJson();
             byte[] responseBytes = jsonResponse.getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(200, responseBytes.length);
+            exchange.sendResponseHeaders(getOk, responseBytes.length);
             try (OutputStream out = exchange.getResponseBody()) {
                 out.write(responseBytes);
             }
@@ -76,7 +93,7 @@ public class WebHandler implements HttpHandler {
         }
 
         // Treat "/" as "/index.html"
-        if (requestPath.equals("/")) {
+        if ("/".equals(requestPath)) {
             requestPath = "/index.html";
         }
 
@@ -86,34 +103,37 @@ public class WebHandler implements HttpHandler {
         // Try to load the file
         String responseContent = loadFile(fileName);
         if (responseContent == null) {
+            return;
         } else {
             if (fileName.endsWith(".html")) {
                 // Calculate server uptime
                 Duration uptime = Duration.between(serverStartTime, Instant.now());
                 long hours = uptime.toHours();
-                long minutes = uptime.toMinutes() % 60;
-                long seconds = uptime.getSeconds() % 60;
+                long minutes = uptime.toMinutes() % minute;
+                long seconds = uptime.getSeconds() % minute;
 
                 String uptimeMessage = String.format("Server uptime: %02d:%02d:%02d", hours, minutes, seconds);
 
                 // Inject uptime message into HTML content
                 responseContent = responseContent.replace("{{SERVER_UPTIME}}", uptimeMessage);
 
-                // Accessing the total number of clients connected 
-                String totalClientsMs = String.format("Total clients connected: %d", ClientHandler.clientTotal);
-                // Inject total number of clients connected variable into the CurrentClients page
+                // Accessing the total number of clients connected
+                String totalClientsMs = String.format("Total clients connected: %d", ClientHandler.getClientTotal());
+                // Inject total number of clients connected variable into the CurrentClients
+                // page
                 responseContent = responseContent.replace("{{TOTAL_CLIENTS}}", totalClientsMs);
 
                 // Accessing the list of client names and adding line breaks
-                String clientNamesListMs = String.join("<br>", ClientHandler.clientNamesList);
+                String clientNamesListMs = String.join("<br>", ClientHandler.getClientNamesList());
                 // Inject all the clients connected names into the CurrentClients page
                 responseContent = responseContent.replace("{{CURRENT_USERS}}", clientNamesListMs);
             }
         }
 
+        final int time = 200;
         // If the file is not found, return a 404 error
         byte[] responseBytes = responseContent.getBytes(StandardCharsets.UTF_8);
-        exchange.sendResponseHeaders(200, responseBytes.length);
+        exchange.sendResponseHeaders(time, responseBytes.length);
         OutputStream out = exchange.getResponseBody();
         out.write(responseBytes);
         out.flush();
@@ -122,14 +142,16 @@ public class WebHandler implements HttpHandler {
 
     // Helper method to create JSON
     private String buildStatusJson() {
+        final int getMinute = 60;
+        final int getSecond = 60;
         Duration uptime = Duration.between(serverStartTime, Instant.now());
         long hours = uptime.toHours();
-        long minutes = uptime.toMinutes() % 60;
-        long seconds = uptime.getSeconds() % 60;
+        long minutes = uptime.toMinutes() % getMinute;
+        long seconds = uptime.getSeconds() % getSecond;
 
         String uptimeMessage = String.format("%02d:%02d:%02d", hours, minutes, seconds);
-        int totalClients = ClientHandler.clientTotal;
-        String clientNames = String.join(",", ClientHandler.clientNamesList);
+        int totalClients = ClientHandler.getClientTotal();
+        String clientNames = String.join(",", ClientHandler.getClientNamesList());
 
         return String.format(
             "{\"uptime\":\"%s\",\"totalClients\":%d,\"clientNames\":\"%s\"}",

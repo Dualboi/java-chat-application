@@ -15,10 +15,10 @@ import java.util.Scanner;
  */
 public class Server {
     // Default server port is set to 6666
-    private static int SERVER_PORT = 0;
     private static final int WEB_PORT = 8080;
+    private static int serverPort = 6666;
+    private static String serverPass;
     private ServerSocket serverSocket;
-    public static String serverPass;
 
     /**
      * Constructor to initialize the server with a ServerSocket.
@@ -27,6 +27,14 @@ public class Server {
      */
     public Server(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
+    }
+
+    public int getServerPort() {
+        return serverPort;
+    }
+
+    public String getServerPass() {
+        return serverPass;
     }
 
     /**
@@ -103,30 +111,27 @@ public class Server {
         try (Scanner scanner = new Scanner(System.in)) {
             // prompt user for port number
             System.out.println("Enter server port (default is 6666):");
-            if (SERVER_PORT == 0) {
-                String portInput = scanner.nextLine();
-                if (portInput != null && !portInput.trim().isEmpty()) {
-                    try {
-                        SERVER_PORT = Integer.parseInt(portInput);
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid port number. Using default port 6666.");
-                        SERVER_PORT = 6666;
-                    }
-                } else {
-                    SERVER_PORT = 6666;
+            String portInput = scanner.nextLine();
+            if (portInput != null && !portInput.trim().isEmpty()) {
+                try {
+                    serverPort = Integer.parseInt(portInput);
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid port number. Using default port 6666.");
                 }
+            } else {
+                System.out.println("No port entered. Using default port 6666.");
             }
             System.out.println("Create a password to secure the server:");
-            String serverPass = scanner.nextLine();
-            if (serverPass == null || serverPass.trim().isEmpty()) {
+            String inputPass = scanner.nextLine();
+            if (inputPass == null || inputPass.trim().isEmpty()) {
                 System.out.println("No password entered. Exiting.");
                 return;
             }
-            Server.serverPass = serverPass;
-            System.out.println("Server password set to: " + serverPass);
+            Server.serverPass = inputPass;
+            System.out.println("Server password set to: " + inputPass);
             System.out.println("Server is starting...");
 
-            ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
+            ServerSocket serverSocket = new ServerSocket(serverPort);
             Server server = new Server(serverSocket);
             server.startServer();
         } catch (IOException e) {

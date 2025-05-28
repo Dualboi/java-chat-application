@@ -7,8 +7,16 @@ package com.sonnybell.app;
  * Usage: java -jar your-app.jar <server|client>
  * @author Sonny Bell
  */
-public class Main {
-    public static void main(String[] args) {
+public interface Main {
+
+    /**
+     * Main method to start the application.
+     * It checks the command line argument to determine whether to start the server or client.
+     * If the argument is missing or incorrect, it prints usage instructions and exits.
+     *
+     * @param args Command line arguments, expected to be either "server" or "client".
+     */
+    static void main(String[] args) {
         if (args.length != 1) {
             System.out.println("Usage: java -jar your-app.jar <server|client>");
             System.exit(1); // Exit the program if the argument is missing or incorrect

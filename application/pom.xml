@@ -82,7 +82,7 @@
     <artifactId>javafx-maven-plugin</artifactId>
     <version>0.0.8</version>
     <configuration>
-        <mainClass>com.sonnybell.app.ClientSideGUI</mainClass> <!-- or your main class -->
+        <mainClass>com.sonnybell.app.ClientSideGUI</mainClass>
     </configuration>
 </plugin>
       <plugin>
@@ -99,7 +99,6 @@
     </execution>
     </executions>
     <configuration>
-      <!-- Provide the correct path to your checkstyle.xml file -->
       <configLocation>${project.basedir}/checkstyle.xml</configLocation>
     </configuration>
 </plugin>
