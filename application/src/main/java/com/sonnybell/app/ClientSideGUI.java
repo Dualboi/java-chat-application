@@ -2,6 +2,10 @@ package com.sonnybell.app;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
@@ -21,6 +25,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.json.JSONObject;
 
 /**
  * ClientSideGUI class to create a graphical user interface for the client.
@@ -37,12 +42,7 @@ public class ClientSideGUI extends Application {
     private Button sendButton;
     private Client client;
     private int serverPort = 6666;
-    private int setWidth1 = 600;
     private Label rightLabel;
-
-    public int getSetWidth1() {
-        return setWidth1;
-    }
 
     /**
      * Constructor to initialize the client-side GUI.
@@ -50,67 +50,52 @@ public class ClientSideGUI extends Application {
      */
     @Override
     public void start(Stage primaryStage) {
+        // Layout constants
         final int setHeight = 50;
         final int setVbox = 10;
+        final int setMessageAreaWidth = 600;
+        final int setInputFieldWidth = 600;
+        final int setRightLabelPadding = 10;
+        final int setRightLabelWidth = 200;
+        final int setRightLabelHeight = 250;
+        final int sizeWidth = 800;
+        final int sizeHeight = 600;
+        final int setMessageAreaHeight = 500;
+        final int setInputBox = 10;
+        final int setSendButtonWidth = 100;
 
-        rightLabel = new Label();
-        updateRightLabel();
-
+        // Main layout
         BorderPane root = new BorderPane();
 
-        // Create a VBox layout for the main window
+        // Chat area
         VBox chatBox = new VBox(setVbox);
-
-        // Create a text area for displaying messages
         messageArea = new TextArea();
-
-        // Set the text area to be non-editable
         messageArea.setEditable(false);
-
-        final int setHeightMessageArea = 500;
-        // Set the text area to be non-resizable
         messageArea.setWrapText(true);
-        messageArea.setPrefHeight(setHeightMessageArea);
-        messageArea.setPrefWidth(setWidth1);
+        messageArea.setPrefHeight(setMessageAreaHeight);
+        messageArea.setPrefWidth(setMessageAreaWidth);
 
-        final int set = 10;
-        final int setLeft = 30;
-        // Add left padding to the message area
-        root.setPadding(new Insets(set, set, set, setLeft));
-
-        // Create a scroll pane for the message area
         inputField = new TextField();
-        inputField.setPrefWidth(setWidth1);
+        inputField.setPrefWidth(setInputFieldWidth);
         inputField.setPrefHeight(setHeight);
-
-        // Set the prompt text for the input field
         inputField.setPromptText("Type a message...");
 
-        final int setWidth2 = 100;
-        // Create a button to send messages
         sendButton = new Button("Send");
-        sendButton.setPrefWidth(setWidth2);
+        sendButton.setPrefWidth(setSendButtonWidth);
         sendButton.setPrefHeight(setHeight);
-
-        // Set the button to be disabled initially
         sendButton.setDisable(true);
 
-        final int inputFieldHeight = 10;
-        HBox inputBox = new HBox(inputFieldHeight, inputField, sendButton);
+        HBox inputBox = new HBox(setInputBox, inputField, sendButton);
         chatBox.getChildren().addAll(new ScrollPane(messageArea), inputBox);
-
-        // Set the chat box to the center of the root layout
         root.setCenter(chatBox);
 
-        final int setRightLabelPadding = 10;
-        final int setRightLabelWidth = 150;
-        final int setRightLabelHeight = 250;
+        // Right label for user info
+        rightLabel = new Label();
         rightLabel.setPadding(new Insets(setRightLabelPadding));
         rightLabel.setMaxWidth(setRightLabelWidth);
         rightLabel.setMinWidth(setRightLabelWidth);
         rightLabel.setMaxHeight(setRightLabelHeight);
 
-        // Wrap the label in a VBox for better layout control
         VBox rightBox = new VBox(rightLabel);
         rightBox.setPrefWidth(setRightLabelWidth);
         rightBox.setMinWidth(setRightLabelWidth);
@@ -118,35 +103,23 @@ public class ClientSideGUI extends Application {
         rightBox.setPadding(new Insets(setRightLabelPadding));
         root.setRight(rightBox);
 
-        final int keySeconds = 1;
-        // Add Timeline to update the right label periodically
-        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(keySeconds), event -> updateRightLabel()));
-        timeline.setCycleCount(Timeline.INDEFINITE);
-        timeline.play();
-
-        final int sizeWidth = 800;
-        final int sizeHeight = 600;
+        // Scene and stage setup
         Scene scene = new Scene(root, sizeWidth, sizeHeight);
-
-        // Set the scene to the primary stage
         primaryStage.setTitle("Client Chat");
         primaryStage.setScene(scene);
-
-        // Set the primary stage to be resizable
         primaryStage.show();
+
+        // Start polling for server status
+        pollServerStatus(); // Initial fetch
+        Timeline statusTimeline = new Timeline(new KeyFrame(Duration.seconds(2), event -> pollServerStatus()));
+        statusTimeline.setCycleCount(Timeline.INDEFINITE);
+        statusTimeline.play();
 
         setupClient();
         setupEventHandlers();
 
         primaryStage.setOnCloseRequest(event -> {
             Platform.exit();
-        });
-    }
-
-    private void updateRightLabel() {
-        Platform.runLater(() -> {
-            rightLabel.setText("Connected Clients: " + ClientHandler.getClientTotal() + "\n"
-                   + "Connected Usernames: " + String.join(", ", ClientHandler.getClientNamesList()));
         });
     }
 
@@ -319,6 +292,33 @@ public class ClientSideGUI extends Application {
             client.sendMessage("quit");
             client.closeEverything();
         }
+    }
+
+    /**
+     * Method to poll the server status and update the right label with
+     * the current usernames and user amounts on the server.
+     * It sends an HTTP request to the server and parses the JSON response.
+     */
+    private void pollServerStatus() {
+        HttpClient httpClient = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/status"))
+                .build();
+
+        httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(HttpResponse::body)
+                .thenAccept(response -> {
+                    JSONObject json = new JSONObject(response);
+                    int totalClients = json.getInt("totalClients");
+                    String clientNames = json.getString("clientNames");
+                    Platform.runLater(() -> {
+                        rightLabel.setText("Connected Clients: " + totalClients + "\n\n"
+                                + "Connected Usernames:\n" + clientNames.replace(",", "\n"));
+                    });
+                })
+                .exceptionally(e -> {
+                    return null;
+                });
     }
 
     /**

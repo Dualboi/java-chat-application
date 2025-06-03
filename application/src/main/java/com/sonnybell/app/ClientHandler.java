@@ -15,6 +15,10 @@ public class ClientHandler implements Runnable {
     // List to keep track of all connected clients
     private static final List<ClientHandler> CLIENT = new CopyOnWriteArrayList<>();
 
+    /**
+     * Static variable to keep track of the total number of connected clients.
+     * It is incremented when a new client connects and decremented when a client disconnects.
+     */
     private static int clientTotal;
 
     /**
