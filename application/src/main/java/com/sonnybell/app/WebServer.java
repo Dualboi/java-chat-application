@@ -11,7 +11,6 @@ import java.util.concurrent.Executors;
  * WebServer class to start the HTTP server.
  * It creates a new WebServer instance and starts it.
  */
-@SuppressWarnings("restriction")
 public class WebServer implements Runnable {
     private int port;
     private Instant startTime;

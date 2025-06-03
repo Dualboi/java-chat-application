@@ -15,7 +15,6 @@ import java.time.Instant;
  * It loads files from the resources directory and serves them as HTTP
  * responses.
  */
-@SuppressWarnings("restriction")
 public class WebHandler implements HttpHandler {
     private Instant serverStartTime;
     private final int minute = 60;
