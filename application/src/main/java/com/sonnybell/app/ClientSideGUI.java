@@ -2,6 +2,8 @@ package com.sonnybell.app;
 
 import java.io.*;
 import java.net.Socket;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -9,13 +11,16 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 /**
  * ClientSideGUI class to create a graphical user interface for the client.
@@ -33,6 +38,7 @@ public class ClientSideGUI extends Application {
     private Client client;
     private int serverPort = 6666;
     private int setWidth1 = 600;
+    private Label rightLabel;
 
     public int getSetWidth1() {
         return setWidth1;
@@ -45,10 +51,15 @@ public class ClientSideGUI extends Application {
     @Override
     public void start(Stage primaryStage) {
         final int setHeight = 50;
-
         final int setVbox = 10;
+
+        rightLabel = new Label();
+        updateRightLabel();
+
+        BorderPane root = new BorderPane();
+
         // Create a VBox layout for the main window
-        VBox root = new VBox(setVbox);
+        VBox chatBox = new VBox(setVbox);
 
         // Create a text area for displaying messages
         messageArea = new TextArea();
@@ -86,7 +97,32 @@ public class ClientSideGUI extends Application {
 
         final int inputFieldHeight = 10;
         HBox inputBox = new HBox(inputFieldHeight, inputField, sendButton);
-        root.getChildren().addAll(new ScrollPane(messageArea), inputBox);
+        chatBox.getChildren().addAll(new ScrollPane(messageArea), inputBox);
+
+        // Set the chat box to the center of the root layout
+        root.setCenter(chatBox);
+
+        final int setRightLabelPadding = 10;
+        final int setRightLabelWidth = 150;
+        final int setRightLabelHeight = 250;
+        rightLabel.setPadding(new Insets(setRightLabelPadding));
+        rightLabel.setMaxWidth(setRightLabelWidth);
+        rightLabel.setMinWidth(setRightLabelWidth);
+        rightLabel.setMaxHeight(setRightLabelHeight);
+
+        // Wrap the label in a VBox for better layout control
+        VBox rightBox = new VBox(rightLabel);
+        rightBox.setPrefWidth(setRightLabelWidth);
+        rightBox.setMinWidth(setRightLabelWidth);
+        rightBox.setMaxWidth(setRightLabelWidth);
+        rightBox.setPadding(new Insets(setRightLabelPadding));
+        root.setRight(rightBox);
+
+        final int keySeconds = 1;
+        // Add Timeline to update the right label periodically
+        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(keySeconds), event -> updateRightLabel()));
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.play();
 
         final int sizeWidth = 800;
         final int sizeHeight = 600;
@@ -104,6 +140,13 @@ public class ClientSideGUI extends Application {
 
         primaryStage.setOnCloseRequest(event -> {
             Platform.exit();
+        });
+    }
+
+    private void updateRightLabel() {
+        Platform.runLater(() -> {
+            rightLabel.setText("Connected Clients: " + ClientHandler.getClientTotal() + "\n"
+                   + "Connected Usernames: " + String.join(", ", ClientHandler.getClientNamesList()));
         });
     }
 
