@@ -2,10 +2,6 @@ package com.sonnybell.app;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
@@ -25,7 +21,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import org.json.JSONObject;
 
 /**
  * ClientSideGUI class to create a graphical user interface for the client.
@@ -43,6 +38,7 @@ public class ClientSideGUI extends Application {
     private Client client;
     private int serverPort = 6666;
     private Label rightLabel;
+    private Timeline statusTimeline; // Add this to manage the polling timeline
 
     /**
      * Constructor to initialize the client-side GUI.
@@ -110,8 +106,10 @@ public class ClientSideGUI extends Application {
         primaryStage.show();
 
         // Start polling for server status
-        pollServerStatus(); // Initial fetch
-        Timeline statusTimeline = new Timeline(new KeyFrame(Duration.seconds(2), event -> pollServerStatus()));
+        // This will update the right label with current usernames and user amounts
+        ServerApiStatus.pollServerStatus(rightLabel); // Initial fetch
+        statusTimeline = new Timeline(new KeyFrame(Duration.seconds(2),
+                event -> ServerApiStatus.pollServerStatus(rightLabel)));
         statusTimeline.setCycleCount(Timeline.INDEFINITE);
         statusTimeline.play();
 
@@ -288,37 +286,13 @@ public class ClientSideGUI extends Application {
      */
     @Override
     public void stop() {
+        if (statusTimeline != null) {
+            statusTimeline.stop();
+        }
         if (client != null) {
             client.sendMessage("quit");
             client.closeEverything();
         }
-    }
-
-    /**
-     * Method to poll the server status and update the right label with
-     * the current usernames and user amounts on the server.
-     * It sends an HTTP request to the server and parses the JSON response.
-     */
-    private void pollServerStatus() {
-        HttpClient httpClient = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/api/status"))
-                .build();
-
-        httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(HttpResponse::body)
-                .thenAccept(response -> {
-                    JSONObject json = new JSONObject(response);
-                    int totalClients = json.getInt("totalClients");
-                    String clientNames = json.getString("clientNames");
-                    Platform.runLater(() -> {
-                        rightLabel.setText("Connected Clients: " + totalClients + "\n\n"
-                                + "Connected Usernames:\n" + clientNames.replace(",", "\n"));
-                    });
-                })
-                .exceptionally(e -> {
-                    return null;
-                });
     }
 
     /**
