@@ -107,15 +107,23 @@ public class ClientSideGUI extends Application {
 
         // Start polling for server status
         // This will update the right label with current usernames and user amounts
-        ServerApiStatus.pollServerStatus(rightLabel); // Initial fetch
+        ServerApiStatus.pollServerStatus(rightLabel);
+
+        // Create a timeline to poll server status every 2 seconds
         statusTimeline = new Timeline(new KeyFrame(Duration.seconds(2),
+        
+        // Poll the server status and update the right label
                 event -> ServerApiStatus.pollServerStatus(rightLabel)));
+                
+                // Set the timeline to repeat indefinitely
         statusTimeline.setCycleCount(Timeline.INDEFINITE);
+        // Start the timeline to begin polling
         statusTimeline.play();
 
         setupClient();
         setupEventHandlers();
 
+        // Handle window close request
         primaryStage.setOnCloseRequest(event -> {
             Platform.exit();
         });

@@ -9,7 +9,13 @@ import javafx.scene.control.Label;
 import org.json.JSONObject;
 
 /**
- * Utility class to poll the server status and update a JavaFX label.
+ * Utility class to poll the server status to update a JavaFX label.
+ * Runs asynchronously to avoid blocking the JavaFX application thread.
+ * Uses the ClientSideGui thread to ensure UI updates are made on the JavaFX Application Thread.
+ * This class provides a method to fetch the current usernames
+ * and user amounts on the server and display them in a label.
+ * It uses Java's HttpClient to make asynchronous HTTP requests
+ * to the server's API endpoint.
  */
 public interface ServerApiStatus {
 
@@ -25,6 +31,7 @@ public interface ServerApiStatus {
                 .uri(URI.create("http://localhost:8080/api/status"))
                 .build();
 
+        // Send the request asynchronously and handle the response
         httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(HttpResponse::body)
                 .thenAccept(response -> {
@@ -36,6 +43,7 @@ public interface ServerApiStatus {
                                 + "Connected Usernames:\n" + clientNames.replace(",", "\n"));
                     });
                 })
+                // Handle any exceptions that occur during the request
                 .exceptionally(e -> {
                     // Optionally update the label with an error message
                     Platform.runLater(() -> rightLabel.setText("Unable to fetch server status."));
