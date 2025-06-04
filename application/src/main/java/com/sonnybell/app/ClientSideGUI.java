@@ -111,11 +111,11 @@ public class ClientSideGUI extends Application {
 
         // Create a timeline to poll server status every 2 seconds
         statusTimeline = new Timeline(new KeyFrame(Duration.seconds(2),
-        
-        // Poll the server status and update the right label
+
+                // Poll the server status and update the right label
                 event -> ServerApiStatus.pollServerStatus(rightLabel)));
-                
-                // Set the timeline to repeat indefinitely
+
+        // Set the timeline to repeat indefinitely
         statusTimeline.setCycleCount(Timeline.INDEFINITE);
         // Start the timeline to begin polling
         statusTimeline.play();
