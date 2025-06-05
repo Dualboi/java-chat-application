@@ -36,11 +36,14 @@ public class WebServer implements Runnable {
             // Create a new HttpServer instance
             HttpServer server = HttpServer.create(new InetSocketAddress("localhost", port), 0);
 
-            // Create a WebHandler to handle requests
+            // Create a WebHandler to handle general requests (files, /api/status)
             WebHandler webHandler = new WebHandler(startTime);
+            // Map general requests to the WebHandler
+            server.createContext("/", webHandler); // This will handle /api/status and file serving
 
-            // Map all requests to the WebHandler
-            server.createContext("/", webHandler);
+            // Create and map the new AdminRemoveUserHandler for the specific admin path
+            RemoveUserEndpointHandler adminRemoveUserHandler = new RemoveUserEndpointHandler();
+            server.createContext("/api/admin/remove-user/", adminRemoveUserHandler); // Note the trailing slash
 
             // Set executor for handling the requests
             server.setExecutor(threadPool);

@@ -1,16 +1,83 @@
 package com.sonnybell.app;
 
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.net.Socket;
+
 /**
  * Utility class for moderation-related functionalities.
  * Used for removing users from the chat server,
  * used by admin only.
  */
-public class Moderation {
-    public void removeUser(String username) {
-        // TODO: Implement the logic to remove a user from the chat server
-        // Implementation for removing a user from the chat server
-        // This method should interact with the server API to remove the specified user
-        // For example, it could send a DELETE request to an endpoint like /api/users/{username}
-        // Note: Actual implementation would depend on the server's API design
+public interface Moderation {
+
+    /**
+     * Delay in milliseconds to allow the client to process the quit message.
+     */
+    int CLIENT_QUIT_PROCESSING_DELAY_MS = 100;
+
+    /**
+     * Removes a user directly from the server's client list.
+     * This method is intended to be used by an admin.
+     *
+     * @param usernameToRemove The username of the user to be removed.
+     * @return true if the user was found and removal was initiated, false
+     *         otherwise.
+     */
+    static boolean removeUserDirectly(String usernameToRemove) {
+        if (usernameToRemove == null || usernameToRemove.trim().isEmpty()) {
+            System.err.println("Moderation: Username to remove cannot be null or empty.");
+            return false;
+        }
+
+        ClientHandler handlerToRemove = null;
+        for (ClientHandler handler : ClientHandler.getClientList()) {
+            if (handler.getUsername().equals(usernameToRemove)) {
+                handlerToRemove = handler;
+                break;
+            }
+        }
+
+        if (handlerToRemove != null) {
+            try {
+                // Get the existing connected socket from the client handler
+                Socket clientSocket = handlerToRemove.getSocket();
+
+                // Create a temporary writer to send quit message to the client
+                BufferedWriter tempWriter = new BufferedWriter(
+                        new OutputStreamWriter(clientSocket.getOutputStream()));
+
+                // Directly tell the user's client to quit via a quit message sent to the server
+                // using the Client.java method to catch the word quit
+                tempWriter.write("quit");
+                tempWriter.newLine();
+                tempWriter.flush();
+
+                // Give the client a moment to process the quit message
+                Thread.sleep(CLIENT_QUIT_PROCESSING_DELAY_MS);
+
+                // Close the temporary writer
+                tempWriter.close();
+
+                // Then close the server-side resources for that user
+                handlerToRemove.closeEverything();
+
+                System.out.println("Moderation: User " + usernameToRemove + " removal process initiated.");
+                return true;
+            } catch (java.io.IOException e) {
+                System.err.println("Moderation: IOException during removal for user "
+                        + usernameToRemove + ": " + e.getMessage());
+                e.printStackTrace();
+                return false;
+            } catch (InterruptedException e) {
+                System.err.println("Moderation: InterruptedException during removal process for user "
+                        + usernameToRemove + ": " + e.getMessage());
+                Thread.currentThread().interrupt(); // Restore the interrupted status
+                return false;
+            }
+        } else {
+            System.out.println("Moderation: User " + usernameToRemove + " not found in local client list.");
+            return false;
+        }
     }
 }

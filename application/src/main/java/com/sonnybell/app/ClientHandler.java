@@ -17,7 +17,8 @@ public class ClientHandler implements Runnable {
 
     /**
      * Static variable to keep track of the total number of connected clients.
-     * It is incremented when a new client connects and decremented when a client disconnects.
+     * It is incremented when a new client connects and decremented when a client
+     * disconnects.
      */
     private static int clientTotal;
 
@@ -85,6 +86,32 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             closeEverything();
         }
+    }
+
+    /**
+     * Method to get the socket connected to the client.
+     *
+     * @return The socket connected to the client.
+     */
+    public Socket getSocket() {
+        return socket;
+    }
+
+    /**
+     * Static variable to keep track of the total number of connected clients.
+     * It is incremented when a new client connects and decremented when a client
+     * disconnects.
+     */
+    public static List<ClientHandler> getClientList() {
+        return CLIENT;
+    }
+
+    /**
+     * Default constructor for the ClientHandler class.
+     * It initializes the client handler with a socket.
+     */
+    public String getUsername() {
+        return username;
     }
 
     /**

@@ -109,6 +109,14 @@ public class Client {
             String msgFromServer;
             try {
                 while ((msgFromServer = reader.readLine()) != null) {
+                    // Check if server sent a quit command
+                    if ("quit".equalsIgnoreCase(msgFromServer.trim())) {
+                        System.out.println("[INFO] Server has requested client to quit. Disconnecting...");
+                        closeEverything();
+                        System.exit(0); // Force application exit
+                        break;
+                    }
+
                     if (messageListener != null) {
                         messageListener.onMessageReceived(msgFromServer);
                     } else {
