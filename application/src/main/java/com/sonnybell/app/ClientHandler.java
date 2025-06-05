@@ -89,6 +89,15 @@ public class ClientHandler implements Runnable {
     }
 
     /**
+     * Method to get the BufferedWriter for sending messages to the client.
+     *
+     * @return The BufferedWriter for sending messages to the client.
+     */
+    public BufferedWriter getBufferedWriter() {
+        return writer;
+    }
+
+    /**
      * Method to get the socket connected to the client.
      *
      * @return The socket connected to the client.

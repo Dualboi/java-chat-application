@@ -59,10 +59,30 @@ public interface Moderation {
                 // Close the temporary writer
                 tempWriter.close();
 
-                // Then close the server-side resources for that user
+                // Create the admin removal message
+                String message = "SERVER: " + usernameToRemove + " has been removed by an admin.";
+                String tag = "Moderation";
+
+                // Broadcast the admin removal message to other clients
+                for (ClientHandler client : ClientHandler.getClientList()) {
+                    if (!client.getUsername().equals(usernameToRemove)) {
+                        try {
+                            client.getBufferedWriter().write(message);
+                            client.getBufferedWriter().newLine();
+                            client.getBufferedWriter().flush();
+                        } catch (java.io.IOException e) {
+                        }
+                    }
+                }
+
+                // Log the admin removal message
+                handlerToRemove.logMessage(message, tag);
+                System.out.println(message);
+
+                // Then close the server-side resources for that user (this will trigger "left
+                // the chat" message)
                 handlerToRemove.closeEverything();
 
-                System.out.println("Moderation: User " + usernameToRemove + " removal process initiated.");
                 return true;
             } catch (java.io.IOException e) {
                 System.err.println("Moderation: IOException during removal for user "
