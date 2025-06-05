@@ -28,13 +28,14 @@
                     <li class="nav-item">
                         <a class="nav-link" href="CurrentUsers.html">Total live Users</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="WebChat.html">Web Chat</a>
+                </ul>
                 </ul>
             </div>
         </div>
     </nav>
     <div class="container text-center mt-5 mb-4">
-        <h1 class="display-4">Welcome to the Chat Server admin page!</h1>
-        <p style="color: rgb(1, 150, 1);">Server is running</p>
         <h1 class="mt-4">Current users on the server:</h1>
     </div>
     <div class="clientNamesBorder container text-center mt-3 mb-5 mx-auto py-3" style="max-width: 50%;">
@@ -45,7 +46,7 @@
             try {
                 const response = await fetch('/api/status');
                 const data = await response.json();
-                document.getElementById('clientNames').textContent = data.clientNames.replace(/,/g, ',');
+                document.getElementById('clientNames').textContent = data.clientNames.replace(/,/g, ', ');
                 if (data.clientNames.length === 0) {
                     document.getElementById('clientNames').textContent = 'No current users';
                 }

@@ -5,7 +5,9 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * ClientHandler class to manage individual client connections.
@@ -14,6 +16,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ClientHandler implements Runnable {
     // List to keep track of all connected clients
     private static final List<ClientHandler> CLIENT = new CopyOnWriteArrayList<>();
+
+    // Maintain a static set of all connected handlers
+    private static final Set<ClientHandler> HANDLERS = new CopyOnWriteArraySet<>();
 
     /**
      * Static variable to keep track of the total number of connected clients.
@@ -80,6 +85,7 @@ public class ClientHandler implements Runnable {
 
             // Add this client to the list of connected clients
             CLIENT.add(this);
+            HANDLERS.add(this);
 
             String message = "SERVER: " + username + " has joined the chat!";
             broadcastMessage(message);
@@ -200,6 +206,7 @@ public class ClientHandler implements Runnable {
     public void removeClientHandler() {
         // Removes the client from the server
         CLIENT.remove(this);
+        HANDLERS.remove(this);
         // Removes the client from the total count of clients
         clientTotal--;
         // Removes the client from the list of usernames
@@ -275,6 +282,30 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.err.println("Failed to write to log file.");
             e.printStackTrace();
+        }
+    }
+
+    /**
+     *
+     * @param message
+     */
+    public static void broadcastMessageToAll(String message) {
+        for (ClientHandler handler : HANDLERS) {
+            handler.sendMessage(message);
+        }
+    }
+
+    /**
+     *
+     * @param message
+     */
+    public void sendMessage(String message) {
+        try {
+            writer.write(message);
+            writer.newLine();
+            writer.flush();
+        } catch (IOException e) {
+            closeEverything();
         }
     }
 }

@@ -2,38 +2,40 @@ package com.sonnybell.app;
 
 /**
  * Main class to start the application.
- * It serves as the entry point for the application.
- * It initializes the server or client based on the command line argument.
- * Usage: java -jar your-app.jar <server|client>
- * @author Sonny Bell
+ * Usage: java -jar your-app.jar <server|client|GUI>
  */
-public interface Main {
+public final class Main {
+
+    // Prevent instantiation
+    private Main() {
+        throw new UnsupportedOperationException("Utility class");
+    }
 
     /**
-     * Main method to start the application.
-     * It checks the command line argument to determine whether to start the server or client.
-     * If the argument is missing or incorrect, it prints usage instructions and exits.
+     * Main method to start the application based on the provided argument.
+     * It can start the server, client, or GUI.
      *
-     * @param args Command line arguments, expected to be either "server" or "client".
+     * @param args Command line arguments: "server", "client", or "GUI"
      */
-    static void main(String[] args) {
+    public static void main(String[] args) {
         if (args.length != 1) {
-            System.out.println("Usage: java -jar your-app.jar <server|client>");
-            System.exit(1); // Exit the program if the argument is missing or incorrect
+            System.out.println("Usage: java -jar your-app.jar <server|client|GUI>");
+            System.exit(1);
         }
 
         String mode = args[0];
 
         if ("server".equalsIgnoreCase(mode)) {
             System.out.println("Starting the server...");
-            // Start server logic
-            Server.main(args); // Call server main method
+            Server.main(args);
         } else if ("client".equalsIgnoreCase(mode)) {
             System.out.println("Starting the client...");
-            // Start client logic
-            Client.main(args); // Call client main method
+            Client.main(args);
+        } else if ("gui".equalsIgnoreCase(mode)) {
+            System.out.println("Starting the GUI...");
+            ClientSideGUI.main(args); // Replace with your JavaFX main class
         } else {
-            System.out.println("Invalid argument. Use 'server' or 'client'.");
+            System.out.println("Invalid argument. Use 'server', 'client', or 'GUI'.");
             System.exit(1);
         }
     }

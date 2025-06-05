@@ -9,14 +9,19 @@ Running instructions
 
 Terminal instructions
 
+mvn clean package
+
 *Server:*
     java -jar target/java_chat_app-1.0-SNAPSHOT.jar server
+    java -jar target/java_chat_app-1.0-SNAPSHOT-jar-with-dependencies.jar server
 
 *Client:*
     java -jar target/java_chat_app-1.0-SNAPSHOT.jar client
+    java -jar target/java_chat_app-1.0-SNAPSHOT-jar-with-dependencies.jar client
 
 To run the client in javafx
     mvn javafx:run "-Djavafx.run.args=client"
+    java -jar target/java_chat_app-1.0-SNAPSHOT-jar-with-dependencies.jar GUI
 
 To access the http server page:
 Enter http://localhost:8080/ into your web browser once the server is running.

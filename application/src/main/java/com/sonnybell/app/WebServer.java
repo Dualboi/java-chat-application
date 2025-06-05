@@ -44,6 +44,8 @@ public class WebServer implements Runnable {
             // Create and map the new AdminRemoveUserHandler for the specific admin path
             RemoveUserEndpointHandler adminRemoveUserHandler = new RemoveUserEndpointHandler();
             server.createContext("/api/admin/remove-user/", adminRemoveUserHandler); // Note the trailing slash
+            server.createContext("/api/webchat/messages", new WebChat());
+            server.createContext("/api/webchat/login", new WebChat());
 
             // Set executor for handling the requests
             server.setExecutor(threadPool);

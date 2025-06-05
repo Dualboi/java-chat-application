@@ -33,7 +33,7 @@ public class Server {
         return serverPort;
     }
 
-    public String getServerPass() {
+    public static String getServerPass() {
         return serverPass;
     }
 
