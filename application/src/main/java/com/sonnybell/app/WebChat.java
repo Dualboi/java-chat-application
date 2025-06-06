@@ -133,6 +133,9 @@ public class WebChat implements HttpHandler {
             ChatHistory.addMessageToHistory(formatted);
             // Broadcast to all connected socket clients
             ClientHandler.broadcastMessageToAll(formatted);
+
+            // Log the message with the user's name
+            ClientHandler.logMessage(formatted, "WebChat");
         }
         exchange.sendResponseHeaders(HTTP_NO_CONTENT, UNKNOWN_CONTENT_LENGTH);
     }
@@ -165,8 +168,10 @@ public class WebChat implements HttpHandler {
 
                 // Broadcast join message to all socket clients
                 ClientHandler.broadcastMessageToAll(joinMsg);
+                // Log the successful login
+                ClientHandler.logMessage(joinMsg, "HelloUser");
 
-                System.out.println("[WebChat] Web user logged in: " + username);
+                // System.out.println("[WebChat] Web user logged in: " + username);
             }
         }
 
@@ -230,7 +235,10 @@ public class WebChat implements HttpHandler {
             // Broadcast leave message to all socket clients
             ClientHandler.broadcastMessageToAll(leaveMsg);
 
-            System.out.println("[WebChat] Web user logged out: " + username);
+            // Log the successful logout
+            ClientHandler.logMessage(leaveMsg, "GoodbyeUser");
+
+            // System.out.println("[WebChat] Web user logged out: " + username);
         }
         // Prepare the response indicating whether the user was removed
         JSONObject resp = new JSONObject();
@@ -253,5 +261,4 @@ public class WebChat implements HttpHandler {
     public static boolean removeFromWebUsers(String username) {
         return WEB_USERS.remove(username);
     }
-    // TODO: implement message logging.
 }

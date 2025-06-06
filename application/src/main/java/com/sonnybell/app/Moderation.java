@@ -70,7 +70,7 @@ public interface Moderation {
                 }
 
                 // Log the removal message
-                handlerToRemove.logMessage(message, tag);
+                ClientHandler.logMessage(message, tag);
                 System.out.println(message);
                 handlerToRemove.closeEverything();
 

@@ -20,6 +20,10 @@ public class ClientHandler implements Runnable {
     // Maintain a static set of all connected handlers
     private static final Set<ClientHandler> HANDLERS = new CopyOnWriteArraySet<>();
 
+    // Make these static since they're used in static methods
+    private static final String LOG_PATTERN = "%h/MessageLog.log";
+    private static final boolean APPEND_MODE = true;
+
     /**
      * Static variable to keep track of the total number of connected clients.
      * It is incremented when a new client connects and decremented when a client
@@ -33,6 +37,7 @@ public class ClientHandler implements Runnable {
      * are connected. This includes both socket clients and web clients.
      */
     private static List<String> clientNamesList = Collections.synchronizedList(new ArrayList<>());
+
     // Socket connected to the client
     private Socket socket;
     // BufferedReader to read messages from the client
@@ -41,10 +46,6 @@ public class ClientHandler implements Runnable {
     private BufferedWriter writer;
     // Username of the client
     private String username;
-    // Append mode for the log file
-    private boolean append;
-    // Pattern for the log file path
-    private String pattern;
 
     /**
      * Constructor to initialize the client handler with a socket.
@@ -52,8 +53,6 @@ public class ClientHandler implements Runnable {
      * @param socket The socket connected to the client.
      */
     public ClientHandler(Socket socket) {
-        // Initialize the log file pattern and append mode
-        this.append("%h/MessageLog.log", true);
         this.socket = socket;
 
         try {
@@ -281,28 +280,19 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Method to append a message to a log file.
-     *
-     * @param filePattern The pattern for the log file.
-     * @param toAppend    Whether to append to the file or not.
-     */
-    public void append(String filePattern, boolean toAppend) {
-        this.pattern = filePattern;
-        this.append = toAppend;
-    }
-
-    /**
-     * Method to log messages to a file.
+     * Static method to log messages to a file.
      *
      * @param message The message to be logged.
+     * @param tag     The tag to associate with the message.
      */
-    public void logMessage(String message, String tag) {
+    public static void logMessage(String message, String tag) {
         String projectDir = System.getProperty("user.dir");
         if (projectDir == null) {
             System.err.println("Could not resolve project directory.");
             return;
         }
-        String filePath = pattern.replace("%h", projectDir);
+
+        String filePath = LOG_PATTERN.replace("%h", projectDir);
         File file = new File(filePath);
 
         if (!file.exists()) {
@@ -318,7 +308,7 @@ public class ClientHandler implements Runnable {
             }
         }
 
-        try (FileWriter fw = new FileWriter(filePath, append)) {
+        try (FileWriter fw = new FileWriter(filePath, APPEND_MODE)) {
             String timestamped = "[" + new java.util.Date() + "] [" + tag + "] " + message;
             fw.write(timestamped + System.lineSeparator());
         } catch (IOException e) {
