@@ -14,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * It handles sending and receiving messages for each connected client.
  */
 public class ClientHandler implements Runnable {
-    // List to keep track of all connected clients
+    // List to keep track of all connected clients (both socket and web clients)
     private static final List<ClientHandler> CLIENT = new CopyOnWriteArrayList<>();
 
     // Maintain a static set of all connected handlers
@@ -23,14 +23,14 @@ public class ClientHandler implements Runnable {
     /**
      * Static variable to keep track of the total number of connected clients.
      * It is incremented when a new client connects and decremented when a client
-     * disconnects.
+     * disconnects. This includes both socket clients and web clients.
      */
     private static int clientTotal;
 
     /**
      * List to keep track of client usernames.
      * This is a synchronized list to ensure thread safety when multiple clients
-     * are connected.
+     * are connected. This includes both socket clients and web clients.
      */
     private static List<String> clientNamesList = Collections.synchronizedList(new ArrayList<>());
     // Socket connected to the client
@@ -52,14 +52,15 @@ public class ClientHandler implements Runnable {
      * @param socket The socket connected to the client.
      */
     public ClientHandler(Socket socket) {
-        this.append("%h/MessageLog.log", true); // Sets the log file path and append mode
+        // Initialize the log file pattern and append mode
+        this.append("%h/MessageLog.log", true);
         this.socket = socket;
 
         try {
             this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            // Only read username AFTER password is validated
+            // Reading username after password is validated
             this.username = reader.readLine();
             if (username == null) {
                 socket.close();
@@ -77,11 +78,14 @@ public class ClientHandler implements Runnable {
 
             System.out.println("A new user has connected!");
 
-            // Adds the client to the total count of clients
-            clientTotal++;
+            // Use centralized tracking for socket clients
+            synchronized (ClientHandler.class) {
+                // Adds the client to the total count of clients
+                clientTotal++;
 
-            // Adds the client to the list of usernames
-            clientNamesList.add(username);
+                // Adds the client to the list of usernames
+                clientNamesList.add(username);
+            }
 
             // Add this client to the list of connected clients
             CLIENT.add(this);
@@ -113,9 +117,42 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Static variable to keep track of the total number of connected clients.
-     * It is incremented when a new client connects and decremented when a client
-     * disconnects.
+     * Static method to add a web client to tracking.
+     * Should be called when a web client connects.
+     *
+     * @param username The username of the connecting web client.
+     */
+    public static synchronized void addWebClient(String username) {
+        // Adds the web client to the total count of clients
+        clientTotal++;
+
+        // Adds the web client to the list of usernames
+        clientNamesList.add(username);
+
+        System.out.println("Web user " + username + " has connected!");
+    }
+
+    /**
+     * Static method to remove a web client from tracking.
+     * Should be called when a web client disconnects.
+     *
+     * @param username The username of the disconnecting web client.
+     */
+    public static synchronized void removeWebClient(String username) {
+        // Removes the web client from the total count of clients
+        clientTotal--;
+
+        // Removes the web client from the list of usernames
+        clientNamesList.remove(username);
+
+        System.out.println("Web user " + username + " has disconnected!");
+    }
+
+    /**
+     * Static method to get the total number of connected clients.
+     * This includes both socket clients and web clients.
+     *
+     * @return The total number of connected clients.
      */
     public static List<ClientHandler> getClientList() {
         return CLIENT;
@@ -207,10 +244,15 @@ public class ClientHandler implements Runnable {
         // Removes the client from the server
         CLIENT.remove(this);
         HANDLERS.remove(this);
-        // Removes the client from the total count of clients
-        clientTotal--;
-        // Removes the client from the list of usernames
-        clientNamesList.remove(username);
+
+        // Use centralized tracking for socket clients
+        synchronized (ClientHandler.class) {
+            // Removes the client from the total count of clients
+            clientTotal--;
+            // Removes the client from the list of usernames
+            clientNamesList.remove(username);
+        }
+
         String message = "SERVER: " + username + " has left the chat.";
         broadcastMessage(message);
     }

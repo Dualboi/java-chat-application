@@ -30,6 +30,7 @@ public interface Moderation {
             return false;
         }
 
+        // First, check if it's a socket client
         ClientHandler handlerToRemove = null;
         for (ClientHandler handler : ClientHandler.getClientList()) {
             if (handler.getUsername().equals(usernameToRemove)) {
@@ -39,31 +40,24 @@ public interface Moderation {
         }
 
         if (handlerToRemove != null) {
+            // Handle socket client removal
             try {
-                // Get the existing connected socket from the client handler
                 Socket clientSocket = handlerToRemove.getSocket();
-
-                // Create a temporary writer to send quit message to the client
                 BufferedWriter tempWriter = new BufferedWriter(
                         new OutputStreamWriter(clientSocket.getOutputStream()));
 
-                // Directly tell the user's client to quit via a quit message sent to the server
-                // using the Client.java method to catch the word quit
                 tempWriter.write("quit");
                 tempWriter.newLine();
                 tempWriter.flush();
 
-                // Give the client a moment to process the quit message
+                // Allow some time for the client to process the quit message
                 Thread.sleep(CLIENT_QUIT_PROCESSING_DELAY_MS);
-
-                // Close the temporary writer
                 tempWriter.close();
 
-                // Create the admin removal message
                 String message = "SERVER: " + usernameToRemove + " has been removed by an admin.";
                 String tag = "Moderation";
 
-                // Broadcast the admin removal message to other clients
+                // Broadcast removal message to all socket clients
                 for (ClientHandler client : ClientHandler.getClientList()) {
                     if (!client.getUsername().equals(usernameToRemove)) {
                         try {
@@ -75,29 +69,44 @@ public interface Moderation {
                     }
                 }
 
-                // Log the admin removal message
+                // Log the removal message
                 handlerToRemove.logMessage(message, tag);
                 System.out.println(message);
-
-                // Then close the server-side resources for that user (this will trigger "left
-                // the chat" message)
                 handlerToRemove.closeEverything();
 
+                // Remove the handler from the client list
                 return true;
-            } catch (java.io.IOException e) {
-                System.err.println("Moderation: IOException during removal for user "
-                        + usernameToRemove + ": " + e.getMessage());
-                e.printStackTrace();
-                return false;
-            } catch (InterruptedException e) {
-                System.err.println("Moderation: InterruptedException during removal process for user "
-                        + usernameToRemove + ": " + e.getMessage());
-                Thread.currentThread().interrupt(); // Restore the interrupted status
+            } catch (java.io.IOException | InterruptedException e) {
+                System.err.println("Moderation: Error during socket client removal: " + e.getMessage());
                 return false;
             }
         } else {
-            System.out.println("Moderation: User " + usernameToRemove + " not found in local client list.");
-            return false;
+            // Check if it's a web client by looking at the centralized username list
+            if (ClientHandler.getClientNamesList().contains(usernameToRemove)) {
+                // It's a web client, remove it using the web client removal method
+                ClientHandler.removeWebClient(usernameToRemove);
+
+                // Also remove from the WebChat WEB_USERS set
+                WebChat.removeFromWebUsers(usernameToRemove);
+
+                String message = "SERVER: " + usernameToRemove + " has been removed by an admin.";
+
+                // Broadcast removal message to all socket clients
+                for (ClientHandler client : ClientHandler.getClientList()) {
+                    try {
+                        client.getBufferedWriter().write(message);
+                        client.getBufferedWriter().newLine();
+                        client.getBufferedWriter().flush();
+                    } catch (java.io.IOException e) {
+                    }
+                }
+
+                System.out.println(message);
+                return true;
+            } else {
+                System.out.println("Moderation: User " + usernameToRemove + " not found.");
+                return false;
+            }
         }
     }
 }
