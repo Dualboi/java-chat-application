@@ -187,24 +187,115 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         String message;
-        try {
-            while (socket.isConnected() && (message = reader.readLine()) != null) {
-                if ("quit".equalsIgnoreCase(message)) {
+        while (socket.isConnected()) {
+            try {
+                message = reader.readLine();
+                if (message == null) {
                     break;
-                } else if (message.trim().isEmpty()) {
-                    continue;
-                } else {
-                    broadcastMessage(message);
                 }
+
+                // Check for game commands
+                if (message.startsWith("/")) {
+                    handleGameCommands(message);
+                    continue;
+                }
+
+                // Check if it's an answer to the current question
+                if (CapitalGame.isGameActive()) {
+                    boolean wasCorrectAnswer = CapitalGame.checkAnswer(username, message);
+                    if (wasCorrectAnswer) {
+                        // Don't broadcast the message if it was a correct answer
+                        // The game will handle the announcement
+                        continue;
+                    }
+                }
+
+                // Regular chat message
+                String formattedMessage = username + ": " + message;
+                broadcastMessage(formattedMessage);
+
+            } catch (IOException e) {
+                closeEverything();
+                break;
             }
+        }
+    }
+
+    /**
+     * Handle game-related commands.
+     */
+    private void handleGameCommands(String command) {
+        switch (command.toLowerCase()) {
+            case "/startgame":
+                CapitalGame.startGame();
+                break;
+            case "/stopgame":
+                CapitalGame.stopGame();
+                break;
+            case "/scores":
+                CapitalGame.showScores();
+                break;
+            case "/gamestatus":
+                String status = CapitalGame.getGameStatus();
+                // Send status only to the user who requested it
+                sendMessage("GAME: " + status);
+                break;
+            case "/help":
+                sendMessage("GAME: Available commands:");
+                sendMessage("GAME: /startgame - Start a new capital game");
+                sendMessage("GAME: /stopgame - Stop the current game");
+                sendMessage("GAME: /scores - Show current scores");
+                sendMessage("GAME: /gamestatus - Check game status");
+                sendMessage("GAME: /help - Show this help message");
+                break;
+            default:
+                sendMessage("GAME: Unknown command '" + command + "'. Type /help for available commands.");
+        }
+    }
+
+    /**
+     * Send a message to this specific client only.
+     *
+     * @param message The message to send.
+     */
+    public void sendMessage(String message) {
+        try {
+            writer.write(message);
+            writer.newLine();
+            writer.flush();
         } catch (IOException e) {
-        } finally {
             closeEverything();
         }
     }
 
     /**
+     * Static method to broadcast a message to ALL connected clients.
+     * This is used for game messages and server announcements.
+     *
+     * @param message The message to be sent to all clients.
+     */
+    public static void broadcastMessageToAll(String message) {
+        // Log game messages
+        logMessage(message, "GameMessages");
+
+        // Add to chat history
+        ChatHistory.addMessageToHistory(message);
+
+        // Send to all socket clients
+        for (ClientHandler handler : CLIENT) {
+            try {
+                handler.writer.write(message);
+                handler.writer.newLine();
+                handler.writer.flush();
+            } catch (IOException e) {
+                handler.closeEverything();
+            }
+        }
+    }
+
+    /**
      * Method to broadcast a message to all connected clients except the sender.
+     * This is used for regular chat messages.
      *
      * @param message The message to be sent.
      */
@@ -314,30 +405,6 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.err.println("Failed to write to log file.");
             e.printStackTrace();
-        }
-    }
-
-    /**
-     *
-     * @param message
-     */
-    public static void broadcastMessageToAll(String message) {
-        for (ClientHandler handler : HANDLERS) {
-            handler.sendMessage(message);
-        }
-    }
-
-    /**
-     *
-     * @param message
-     */
-    public void sendMessage(String message) {
-        try {
-            writer.write(message);
-            writer.newLine();
-            writer.flush();
-        } catch (IOException e) {
-            closeEverything();
         }
     }
 }
