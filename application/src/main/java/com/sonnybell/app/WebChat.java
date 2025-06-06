@@ -131,11 +131,20 @@ public class WebChat implements HttpHandler {
         if (!message.isBlank()) {
             String formatted = user + ": " + message;
             ChatHistory.addMessageToHistory(formatted);
-            // Broadcast to all connected socket clients
-            ClientHandler.broadcastMessageToAll(formatted);
 
-            // Log the message with the user's name
+            // Log the message with the WebChat tag only
             ClientHandler.logMessage(formatted, "WebChat");
+
+            // Send to socket clients only (without additional logging)
+            for (ClientHandler client : ClientHandler.getClientList()) {
+                try {
+                    client.getBufferedWriter().write(formatted);
+                    client.getBufferedWriter().newLine();
+                    client.getBufferedWriter().flush();
+                } catch (IOException e) {
+                    client.closeEverything();
+                }
+            }
         }
         exchange.sendResponseHeaders(HTTP_NO_CONTENT, UNKNOWN_CONTENT_LENGTH);
     }

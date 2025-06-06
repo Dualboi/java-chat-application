@@ -1,20 +1,11 @@
 package com.sonnybell.app;
 
-import java.io.BufferedWriter;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
-
 /**
  * Utility class for moderation-related functionalities.
  * Used for removing users from the chat server,
  * used by admin only.
  */
 public interface Moderation {
-
-    /**
-     * Delay in milliseconds to allow the client to process the quit message.
-     */
-    int CLIENT_QUIT_PROCESSING_DELAY_MS = 100;
 
     /**
      * Removes a user directly from the server's client list.
@@ -30,7 +21,6 @@ public interface Moderation {
             return false;
         }
 
-        // First, check if it's a socket client
         ClientHandler handlerToRemove = null;
         for (ClientHandler handler : ClientHandler.getClientList()) {
             if (handler.getUsername().equals(usernameToRemove)) {
@@ -40,46 +30,27 @@ public interface Moderation {
         }
 
         if (handlerToRemove != null) {
-            // Handle socket client removal
-            try {
-                Socket clientSocket = handlerToRemove.getSocket();
-                BufferedWriter tempWriter = new BufferedWriter(
-                        new OutputStreamWriter(clientSocket.getOutputStream()));
+            String message = "SERVER: " + usernameToRemove + " has been removed by an admin.";
+            String tag = "Moderation";
 
-                tempWriter.write("quit");
-                tempWriter.newLine();
-                tempWriter.flush();
+            // Log the admin action before initiating shutdown
+            ClientHandler.logMessage(message, tag);
+            System.out.println(message);
 
-                // Allow some time for the client to process the quit message
-                Thread.sleep(CLIENT_QUIT_PROCESSING_DELAY_MS);
-                tempWriter.close();
+            // Ask the ClientHandler to shut down itself and notify its client.
+            // This will also trigger the "user has left" broadcast via closeEverything ->
+            // removeClientHandler.
+            handlerToRemove.initiateShutdownByAdmin();
 
-                String message = "SERVER: " + usernameToRemove + " has been removed by an admin.";
-                String tag = "Moderation";
-
-                // Broadcast removal message to all socket clients
-                for (ClientHandler client : ClientHandler.getClientList()) {
-                    if (!client.getUsername().equals(usernameToRemove)) {
-                        try {
-                            client.getBufferedWriter().write(message);
-                            client.getBufferedWriter().newLine();
-                            client.getBufferedWriter().flush();
-                        } catch (java.io.IOException e) {
-                        }
-                    }
+            // Broadcast the specific admin removal message to other clients.
+            for (ClientHandler client : ClientHandler.getClientList()) {
+                // The list should be updated, so handlerToRemove should not be in it.
+                // We send to all *other* clients.
+                if (!client.getUsername().equals(usernameToRemove)) { // Check username to be sure
+                    client.sendMessage(message); // Send the specific admin removal message
                 }
-
-                // Log the removal message
-                ClientHandler.logMessage(message, tag);
-                System.out.println(message);
-                handlerToRemove.closeEverything();
-
-                // Remove the handler from the client list
-                return true;
-            } catch (java.io.IOException | InterruptedException e) {
-                System.err.println("Moderation: Error during socket client removal: " + e.getMessage());
-                return false;
             }
+            return true;
         } else {
             // Check if it's a web client by looking at the centralized username list
             if (ClientHandler.getClientNamesList().contains(usernameToRemove)) {
@@ -89,19 +60,15 @@ public interface Moderation {
                 // Also remove from the WebChat WEB_USERS set
                 WebChat.removeFromWebUsers(usernameToRemove);
 
-                String message = "SERVER: " + usernameToRemove + " has been removed by an admin.";
+                String message = "SERVER: " + usernameToRemove + " (Web) has been removed by an admin.";
+                String tag = "Moderation";
+
+                ClientHandler.logMessage(message, tag);
+                System.out.println(message);
 
                 // Broadcast removal message to all socket clients
-                for (ClientHandler client : ClientHandler.getClientList()) {
-                    try {
-                        client.getBufferedWriter().write(message);
-                        client.getBufferedWriter().newLine();
-                        client.getBufferedWriter().flush();
-                    } catch (java.io.IOException e) {
-                    }
-                }
+                ClientHandler.broadcastMessageToAll(message); // This is a static method, sends to all current socket
 
-                System.out.println(message);
                 return true;
             } else {
                 System.out.println("Moderation: User " + usernameToRemove + " not found.");

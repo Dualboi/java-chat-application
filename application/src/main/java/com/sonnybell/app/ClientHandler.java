@@ -194,15 +194,32 @@ public class ClientHandler implements Runnable {
                     break;
                 }
 
-                // Check for game commands
-                if (message.startsWith("/")) {
-                    handleGameCommands(message);
+                // Skip logging empty or whitespace-only messages
+                if (message.trim().isEmpty()) {
+                    continue;
+                }
+
+                // Check for quit command - don't log it
+                if ("quit".equalsIgnoreCase(message.trim())) {
+                    break;
+                }
+
+                // Parse the message to extract the actual content after "username: "
+                String actualMessage = message;
+                String prefix = username + ": ";
+                if (message.startsWith(prefix)) {
+                    actualMessage = message.substring(prefix.length());
+                }
+
+                // Check for game commands on the actual message content
+                if (actualMessage.startsWith("/")) {
+                    handleGameCommands(actualMessage);
                     continue;
                 }
 
                 // Check if it's an answer to the current question
                 if (CapitalGame.isGameActive()) {
-                    boolean wasCorrectAnswer = CapitalGame.checkAnswer(username, message);
+                    boolean wasCorrectAnswer = CapitalGame.checkAnswer(username, actualMessage);
                     if (wasCorrectAnswer) {
                         // Don't broadcast the message if it was a correct answer
                         // The game will handle the announcement
@@ -210,9 +227,8 @@ public class ClientHandler implements Runnable {
                     }
                 }
 
-                // Regular chat message
-                String formattedMessage = username + ": " + message;
-                broadcastMessage(formattedMessage);
+                // Regular chat message - only log if it's not empty/whitespace
+                broadcastMessage(message); // Broadcast the original formatted message
 
             } catch (IOException e) {
                 closeEverything();
@@ -405,6 +421,33 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.err.println("Failed to write to log file.");
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Initiates a shutdown sequence for this client handler, typically triggered by
+     * an admin.
+     * Sends a "quit" command to the client and then closes all server-side
+     * resources for this client.
+     */
+    public void initiateShutdownByAdmin() {
+        try {
+            if (socket != null && !socket.isClosed() && writer != null) {
+                writer.write("quit"); // Send quit command to the client
+                writer.newLine();
+                writer.flush();
+                // Log that admin initiated quit, if desired
+                // logMessage("Admin initiated quit for user: " + username, "Moderation");
+            }
+        } catch (IOException e) {
+            System.err.println("ClientHandler: Error sending 'quit' message during admin removal for " + username + ": "
+                    + e.getMessage());
+            // Continue with closing everything, as the client might be unresponsive
+        } finally {
+            // Proceed to close everything on the server side for this client
+            // This will also handle removing the client from lists and broadcasting their
+            // departure
+            closeEverything();
         }
     }
 }
