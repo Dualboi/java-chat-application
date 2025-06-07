@@ -122,31 +122,32 @@ public class WebChat implements HttpHandler {
      * @throws IOException If an I/O error occurs during request handling.
      */
     private void handlePostMessage(HttpExchange exchange) throws IOException {
-        String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-        JSONObject obj = new JSONObject(body);
-        String user = obj.optString("user", "webuser");
-        String message = obj.optString("message", "");
-        // If the message is not blank, add it to the chat history and broadcast it
-        // to all connected clients
-        if (!message.isBlank()) {
-            String formatted = user + ": " + message;
-            ChatHistory.addMessageToHistory(formatted);
+        String requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+        JSONObject payload = new JSONObject(requestBody);
+        String user = payload.optString("user", "");
+        String message = payload.optString("message", "");
 
-            // Log the message with the WebChat tag only
-            ClientHandler.logMessage(formatted, "WebChat");
-
-            // Send to socket clients only (without additional logging)
-            for (ClientHandler client : ClientHandler.getClientList()) {
-                try {
-                    client.getBufferedWriter().write(formatted);
-                    client.getBufferedWriter().newLine();
-                    client.getBufferedWriter().flush();
-                } catch (IOException e) {
-                    client.closeEverything();
-                }
+        // Handle game command
+        if (message.startsWith("/startgame")) {
+            CapitalGame.startGame();
+            // Optionally broadcast a notice
+            ClientHandler.broadcastMessageToAll("GAME START command issued by: " + user);
+        } else if (CapitalGame.isGameActive()) {
+            // Let the game check if this is the correct answer
+            boolean wasCorrect = CapitalGame.checkAnswer(user, message);
+            if (wasCorrect) {
+                // Already handled by game logic, so just return
+                sendNoContent(exchange);
+                return;
             }
         }
-        exchange.sendResponseHeaders(HTTP_NO_CONTENT, UNKNOWN_CONTENT_LENGTH);
+
+        // Normal chat message from web client; log/tag as WebChat
+        String formattedMessage = user + ": " + message;
+        ClientHandler.logMessage(formattedMessage, "WebChat");
+        ClientHandler.broadcastMessageToAll(formattedMessage);
+
+        sendNoContent(exchange);
     }
 
     /**
@@ -198,6 +199,7 @@ public class WebChat implements HttpHandler {
 
     /**
      * Handles POST requests to check if a user is still logged in.
+     *
      * @param exchange The HttpExchange object containing request and response data.
      * @throws IOException If an I/O error occurs during request handling.
      */
@@ -269,5 +271,10 @@ public class WebChat implements HttpHandler {
      */
     public static boolean removeFromWebUsers(String username) {
         return WEB_USERS.remove(username);
+    }
+
+    private void sendNoContent(HttpExchange exchange) throws IOException {
+        exchange.sendResponseHeaders(HTTP_NO_CONTENT, UNKNOWN_CONTENT_LENGTH);
+        exchange.close();
     }
 }

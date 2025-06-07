@@ -12,9 +12,24 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public final class CapitalGame {
 
-    // Static final constants first
+    // Winning score for the game
     private static final int WINNING_SCORE = 5;
-    private static final long QUESTION_TIMEOUT = 30000; // 30 seconds
+
+    // Time constants for game delays
+    // 0.5 seconds
+    private static final int HALF_SECOND = 500;
+
+    // 1 second
+    private static final int ONE_SECOND = 1000;
+
+    // 2 seconds
+    private static final int TWO_SECONDS = 2000;
+
+    // 3 seconds
+    private static final int THREE_SECONDS = 3000;
+
+    // 30 seconds
+    private static final long QUESTION_TIMEOUT = 30000;
 
     // Static final collections
     private static final List<String> QUESTIONS = new CopyOnWriteArrayList<>();
@@ -95,11 +110,36 @@ public final class CapitalGame {
         gameActive = true;
         PLAYER_SCORES.clear();
 
+        // Send game start message with delays between instructions
         ClientHandler.broadcastMessageToAll("CAPITAL GAME STARTED! ");
-        ClientHandler.broadcastMessageToAll("GAME: First to " + WINNING_SCORE + " correct answers wins!");
-        ClientHandler.broadcastMessageToAll("GAME: Type your answer in the chat to participate!");
 
-        nextQuestion();
+        // Delay before next instruction
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                ClientHandler.broadcastMessageToAll("GAME: First to " + WINNING_SCORE + " correct answers wins!");
+            }
+            // Delay before next instruction
+        }, ONE_SECOND);
+
+        // Delay before next instruction
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                ClientHandler.broadcastMessageToAll("GAME: Type your answer in the chat to participate!");
+            }
+            // 2 seconds delay
+        }, TWO_SECONDS);
+
+        // Delay before first question
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                nextQuestion();
+            }
+            // Start the first question after a delay
+        }, THREE_SECONDS);
     }
 
     /**
@@ -111,9 +151,19 @@ public final class CapitalGame {
             return;
         }
 
+        // Reset game state
         gameActive = false;
         ClientHandler.broadcastMessageToAll("GAME STOPPED! ");
-        showScores();
+
+        // Small delay before showing scores
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                showScores();
+            }
+            // 0.5 second delay
+        }, HALF_SECOND);
     }
 
     /**
@@ -130,16 +180,35 @@ public final class CapitalGame {
         final int second = 1000;
 
         ClientHandler.broadcastMessageToAll("QUESTION: " + currentQuestion);
-        ClientHandler.broadcastMessageToAll("GAME: You have " + (QUESTION_TIMEOUT / second) + " seconds to answer!");
+
+        // Small delay before timeout message
+        Timer instructionTimer = new Timer();
+        instructionTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                ClientHandler
+                        .broadcastMessageToAll("GAME: You have " + (QUESTION_TIMEOUT / second) + " seconds to answer!");
+            }
+            // 0.5 second delay
+        }, HALF_SECOND);
 
         // Schedule timeout for question
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
+        Timer timeoutTimer = new Timer();
+        timeoutTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 if (gameActive && currentQuestion.equals(QUESTIONS.get(currentQuestionIndex))) {
                     ClientHandler.broadcastMessageToAll("TIME'S UP! The answer was: " + currentAnswer);
-                    nextQuestion();
+
+                    // Small delay before next question
+                    Timer nextQuestionTimer = new Timer();
+                    nextQuestionTimer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            nextQuestion();
+                        }
+                        // 1 second delay before next question
+                    }, ONE_SECOND);
                 }
             }
         }, QUESTION_TIMEOUT);
