@@ -1,4 +1,7 @@
-package com.sonnybell.app;
+package com.sonnybell.app.interfaces;
+
+import com.sonnybell.app.client.ClientHandler;
+import com.sonnybell.app.web.WebChat;
 
 /**
  * Utility class for moderation-related functionalities.

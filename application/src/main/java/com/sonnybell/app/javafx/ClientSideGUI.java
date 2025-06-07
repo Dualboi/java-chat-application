@@ -1,5 +1,6 @@
-package com.sonnybell.app;
+package com.sonnybell.app.javafx;
 
+import com.sonnybell.app.client.Client;
 import java.io.*;
 import java.net.Socket;
 import javafx.animation.KeyFrame;

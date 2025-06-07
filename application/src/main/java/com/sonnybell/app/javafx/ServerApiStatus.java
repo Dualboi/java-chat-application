@@ -1,4 +1,4 @@
-package com.sonnybell.app;
+package com.sonnybell.app.javafx;
 
 import java.net.URI;
 import java.net.http.HttpClient;

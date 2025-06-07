@@ -1,5 +1,6 @@
-package com.sonnybell.app;
+package com.sonnybell.app.games;
 
+import com.sonnybell.app.client.ClientHandler;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;

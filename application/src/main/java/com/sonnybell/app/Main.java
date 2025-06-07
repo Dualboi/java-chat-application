@@ -1,5 +1,9 @@
 package com.sonnybell.app;
 
+import com.sonnybell.app.client.Client;
+import com.sonnybell.app.javafx.ClientSideGUI;
+import com.sonnybell.app.server.Server;
+
 /**
  * Main class to start the application.
  * Usage: java -jar your-app.jar <server|client|GUI>

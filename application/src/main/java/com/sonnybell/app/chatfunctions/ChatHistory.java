@@ -1,4 +1,4 @@
-package com.sonnybell.app;
+package com.sonnybell.app.chatfunctions;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.List;
  * This ensures that the message history does not grow indefinitely and consumes
  * excessive memory.
  */
-final class ChatHistory {
+public final class ChatHistory {
 
     private static final int MAX_HISTORY = 100;
     private static final LinkedList<String> MESSAGE_HISTORY = new LinkedList<>();

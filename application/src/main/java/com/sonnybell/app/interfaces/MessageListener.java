@@ -1,4 +1,4 @@
-package com.sonnybell.app;
+package com.sonnybell.app.interfaces;
 
 /**
  * Interface to listen for incoming messages.

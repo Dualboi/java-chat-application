@@ -1,4 +1,4 @@
-package com.sonnybell.app;
+package com.sonnybell.app.games;
 
 /**
  * Class file for the chess application logic.

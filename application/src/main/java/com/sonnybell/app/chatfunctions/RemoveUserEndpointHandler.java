@@ -1,5 +1,6 @@
-package com.sonnybell.app;
+package com.sonnybell.app.chatfunctions;
 
+import com.sonnybell.app.interfaces.Moderation;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;

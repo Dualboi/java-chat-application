@@ -1,5 +1,9 @@
-package com.sonnybell.app;
+package com.sonnybell.app.web;
 
+import com.sonnybell.app.chatfunctions.ChatHistory;
+import com.sonnybell.app.client.ClientHandler;
+import com.sonnybell.app.games.CapitalGame;
+import com.sonnybell.app.server.Server;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.*;

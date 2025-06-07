@@ -1,4 +1,4 @@
-package com.sonnybell.app;
+package com.sonnybell.app.games;
 
 /**
  * Fully functional JavaFX application for a chess game.
